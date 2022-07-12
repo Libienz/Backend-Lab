@@ -66,6 +66,53 @@ mvc패턴은 디자인 패턴 중 하나를 말한다. Model, View, Controller�
 ![img_3.png](img_3.png)
 그림처럼 ViewResolver대신에 HttpMessageConverter가 작동하게 되고 문자의 처리는 String Converter, 객체의 처리는 JsonConverter가 작동하게 된다. 
 
+
+</div>
+</details>
+
+<details>
+<summary>03 회원관리 예제 백엔드 개발</summary>
+<div markdown="1">
+
+## 비즈니스 요구사항 
+데이터 : 회원ID, 이름
+기능 : 회원 등록, 조회
+아직 데이터 저장소가 선정되지 않음 -> 인터페이스로 만들고 내부의 저장소 우선 사용
+
+![img_4.png](img_4.png)
+
+## MemberRepository
+여기 interface에서 Optional<Member> findById (Long id);
+라는 미구현 메소드를 볼 수 있는데 Optional은 널처리에 많이 쓰이는 방식으로 Optional로 감싸면 
+널처리가 쉬워진다.
+```java
+public Optional<Member> findByid(Long id) {
+        return Optional.ofNullable(store.get(id));
+        }
+
+```
+스트림과 람다식을 이용한 findByName
+```java
+public Optional<Member> findByName(String name) {
+    return store.values().stream() //value는 맵의 값들을 콜렉션 형태로 반환 .stream()은 
+        .filter(member -> member.getName().equals(name))
+        .findAny(); //하나라도 찾으면 
+}
+```
+자바 실무에서 List를 자주쓴다. 인터페이스임을 기억하자!
+```java
+    @Override
+    public List<Member> findAll() {
+        return new ArrayList<>(store.values());
+    }
+
+```
+
+## Test Case
+메인 메소드 계속해서 돌리면서 체크하면 오버헤드 쩐다. 코드를 코드로 검토하자
+
+
+
 </div>
 </details>
 
