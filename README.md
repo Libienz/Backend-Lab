@@ -137,6 +137,18 @@ assert를 이용한 방법
         repository.clearStore();
     }
 ```
+## Member Service 
+```java
+    public Long join(Member member) {
+        Optional<Member> result = memberRepository.findByName(member.getName());
+        result.ifPresent(m -> { //result는 옵셔널 
+            throw new IllegalStateException("이미 존재하는 회원입니다.");
+        });
+        memberRepository.save(member);
+        return member.getId();
+    }
+
+```
 </div>
 </details>
 
@@ -146,6 +158,7 @@ assert를 이용한 방법
 <div markdown="1">
 shift + f6 : 변수이름 같은거 한꺼번에 바꾸기
 alt + enter : static도 임포트 가능
-
+crtl + alt + m : 해당 식을 메소드로 추출
+crtl(command) + alt(option) + v : 함수 표현식만 쓰고 리턴값을 받고 싶을때 사용
 </div>
 </details>
