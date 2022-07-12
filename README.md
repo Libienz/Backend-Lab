@@ -71,7 +71,7 @@ mvc패턴은 디자인 패턴 중 하나를 말한다. Model, View, Controller�
 </details>
 
 <details>
-<summary>03 회원관리 예제 백엔드 개발</summary>
+<summary>02 회원관리 예제 백엔드 개발</summary>
 <div markdown="1">
 
 ## 비즈니스 요구사항 
@@ -188,10 +188,16 @@ assert를 이용한 방법
 <details>
 <summary>편리한 단축키</summary>
 <div markdown="1">
+
 shift + f6 : 변수이름 같은거 한꺼번에 바꾸기
+
 alt + enter : static도 임포트 가능
+
 crtl + alt + m : 해당 식을 메소드로 추출
+
 crtl + shift + t : 해당클래스의 테스트 클래스 만들기
+
 crtl(command) + alt(option) + v : 함수 표현식만 쓰고 리턴값을 받고 싶을때 사용
+
 </div>
 </details>
