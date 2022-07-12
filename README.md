@@ -129,6 +129,9 @@ assert를 이용한 방법
 ```
 모든 테스트는 순서가 보장되지 않으니 저장소 같은 곳을 건드릴 때 생각하고 사용하자
 여담 : 테스트를 먼저 만들고 구현을 나중에 하는 방식을 테스트 주도 개발, TTD라고 함
+//given
+//when
+//then으로 구분하면 보기 쉬움
 ```java
     @AfterEach 
     // 메소드 테스트가 끝날때마다 실행되는 콜백 메소드
@@ -149,6 +152,35 @@ assert를 이용한 방법
     }
 
 ```
+##Member Service Test
+예외가 올바르게 터지는지 확인하는 법 try catch 보다 편한 문법은 assertThrows
+
+```java
+        assertThrows(IllegalStateException.class, () -> memberService.join(member2));
+        //람다를 실행할 건데 앞의 오류가 터져야함 안터지면 test fail
+/*
+        try {
+            memberService.join(member2);
+            fail();
+        }
+        catch (IllegalStateException e) {
+            assertThat(e.getMessage()).isEqualTo("이미 존재하는 회원입니다.");
+        }
+```
+
+```java
+    @BeforeEach
+    public void beforeEach() {
+        memberRepository = new MemoryMemberRepository();
+        memberService = new MemberService(memberRepository);
+        //멤버 서비스 입장에서 레포를 직접 만들지 않고 외부에서 받네? -> dependency injection 의존성 주입 di
+        
+    }
+    @AfterEach
+    public void afterEach() {
+        memberRepository.clearStore();
+    }
+```
 </div>
 </details>
 
@@ -159,6 +191,7 @@ assert를 이용한 방법
 shift + f6 : 변수이름 같은거 한꺼번에 바꾸기
 alt + enter : static도 임포트 가능
 crtl + alt + m : 해당 식을 메소드로 추출
+crtl + shift + t : 해당클래스의 테스트 클래스 만들기
 crtl(command) + alt(option) + v : 함수 표현식만 쓰고 리턴값을 받고 싶을때 사용
 </div>
 </details>

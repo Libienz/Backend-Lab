@@ -9,8 +9,11 @@ import java.util.Optional;
 
 public class MemberService {
 
-    private final MemberRepository memberRepository = new MemoryMemberRepository();
+    private final MemoryMemberRepository memberRepository;
 
+    public MemberService(MemberRepository memberRepository) {
+        this.memberRepository = memberRepository;
+    }
     public Long join(Member member) {
         validateDuplicate(member);
         memberRepository.save(member);
@@ -26,6 +29,9 @@ public class MemberService {
 
     public List<Member> findMembers() {
         return memberRepository.findAll();
+    }
+    public void clearRepos() {
+        memberRepository.clearStore();
     }
 
 }
