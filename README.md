@@ -110,9 +110,42 @@ public Optional<Member> findByName(String name) {
 
 ## Test Case
 메인 메소드 계속해서 돌리면서 체크하면 오버헤드 쩐다. 코드를 코드로 검토하자
+--> junit이라는 프레임워크 사용 테스트를 간편하게 할 수 있다. 
 
+assert를 이용한 방법
+```java
+@Test //이게 junit에서 제공하는 거
+    public void save() {
+        Member member = new Member();
+        member.setName("spring");
 
+        repository.save(member);
 
+        Member result = repository.findById(member.getId()).get();
+        //System.out.println("result = " + (result == member));
+        //Assertions.assertEquals(member, result); 
+        assertThat(member).isEqualTo(result); //alt enter -> 스태틱 임포트
+    }
+```
+모든 테스트는 순서가 보장되지 않으니 저장소 같은 곳을 건드릴 때 생각하고 사용하자
+여담 : 테스트를 먼저 만들고 구현을 나중에 하는 방식을 테스트 주도 개발, TTD라고 함
+```java
+    @AfterEach 
+    // 메소드 테스트가 끝날때마다 실행되는 콜백 메소드
+    //콜백 메소드 : 어떤 이벤트가 발생했거나 특정 시점에 도달했을 때 시스템에서 호출하는 함수!
+    public void afterEach() {
+        repository.clearStore();
+    }
+```
 </div>
 </details>
 
+
+<details>
+<summary>편리한 단축키</summary>
+<div markdown="1">
+shift + f6 : 변수이름 같은거 한꺼번에 바꾸기
+alt + enter : static도 임포트 가능
+
+</div>
+</details>
