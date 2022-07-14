@@ -264,7 +264,7 @@ public class SpringConfig {
 </details>
 
 <details>
-<summary>04회원 관리 예제 - 웹MVC 개발</summary>
+<summary>04 회원 관리 예제 - 웹MVC 개발</summary>
 <div markdown="1">
 
 
@@ -272,6 +272,43 @@ public class SpringConfig {
 
 </div>
 </details>
+
+<details>
+<summary>05 스프링 DB 접근 기술</summary>
+<div markdown="1">
+
+## H2 database 와 순수 JDBC를 이용한 레포
+어플리케이션 프로퍼티 설정하고 그래들 설정해서 프로젝트와 db 꽃고 쿼리 만들어서 새로운 repos 구현 하는 이것 저것 지켜봤다. 
+기술이 옛날 것이기에 database사용하는 느낌 정도만 가져가자
+
+다만 우리가 repo를 인터페이스로 만듦으로써 다형성을 챙겨
+개방 폐쇄 원칙(OCP : Open-Closed Principle)을 지켰다는 점을 기억하자
+
+
+개방 폐쇄 원칙은 확장에는 열려 있고 수정 변경에는 닫혀있음을 의미
+
+스프링은 결국 스프링의 DI (Dependencies Injection)등을 이용하여 기존 코드를 전혀 손대지 않고, 설정만으로 구현
+클래스를 변경할 수 있다.
+
+## 스프링 통합 테스트
+우리가 일전에 했던 테스트는 스프링과 전혀 무관한 순수 자바 코드만의 테스트.
+
+여기 챕터에서는 스프링과 엮은 DB까지의 통합 테스트등을 진행
+
+테스트 클래스에 @SpringBootTest와 @Transactional 어노테이션 두개를 붙여주면 됨 Trancsacional은 테스트케이스에 달리면 테스트가 끝나면 DB에서 처리되었던 쿼리들을
+롤백해줌 즉 다음 테스트를 연속적으로 진행할 수 있도록 한다는 것 
+
+
+테스트에 필요한 MemberService 클래스나 repos는 autowired로 그냥 꽃아주면 됨. 제일 편한 방식으로 의존성 주입하면 된다는 뜻 테스트는 가장 편한 방식을 사용하면 된다.
+
+여기에서 보일 것은 DB가 잘 연결되었는지
+
+
+
+
+</div>
+</details>
+
 
 <details>
 <summary>편리한 단축키</summary>
