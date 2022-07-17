@@ -340,6 +340,39 @@ Object Relational Mapping 객체와 관계형 데이터베이스를 매핑한다
 </div>
 </details>
 
+<details>
+<summary>06 AOP</summary>
+<div markdown="1">
+
+## AOP
+
+### AOP란?
+
+공통관심사항과 핵심관심사항의 분리 
+
+메소드마다 시작 시간을 기록하고 싶다고 해보자 
+System.time 머시기를 메소드의 첫부분부분마다 쓸 수도 있겠지만
+사실 이는 관심사항의 분리가 명확히 일어나지 않은 케이스 시간측정 로직을 한 군데에 모아놓고
+사용한다면 이는 AOP를 적절히 사용한 예.
+
+AOP를 수행하는 클래스는 @Aspect 어노테이션이 붙음과 동시에 스프링 빈으로써 관리되도록 
+컴포넌트 스캔 혹은 config에 등록해야함 또한 @Around 어노테이션으로 이 AOP가 어디에 적용되는지 명시해야 함
+
+```java
+@Around("execution(* hello.hellospring..*(..))") // hello.spring 패키지 하위에 있는 모든
+public Object execute(ProceedingJoinPoint joinPoint) {
+    
+}
+```
+### 프록시 생성
+
+![img_6.png](img_6.png)
+
+AOP를 적용하면 가짜(프록시)를 만들고 진짜의 앞에 세워둔다. 진짜의 호출은
+joinPoint.proceed()이후 실제 객체로 넘어간다.
+
+</div>
+</details>
 
 <details>
 <summary>편리한 단축키</summary>
