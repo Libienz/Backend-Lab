@@ -1,4 +1,4 @@
-# JAVA_Spring_Lab2
+# JAVA_Spring_Core
 
 <details>
 <summary>01 객체 지향 설계와 스프링 </summary>
