@@ -122,3 +122,37 @@ MemberRepository m = new JdbcMemberReopsitory(); //변경 코드
 
 </div>
 </details>
+
+
+<details>
+<summary>02 예제 </summary>
+<div markdown="1">
+
+## 비즈니스 요구사항
+- 회원 가입, 조회
+- 회원의 등급은 일반, VIP 두가지
+- 자체 DB but 바꿀수도 있음
+- 상품 주문할 수 있고 VIP에게는 할인 정책 적용
+- 어떤 할인정책을 사용할지 미지수 
+
+## 순수 자바코드의 개발 
+MemberService, MemberRepository, OrderService를 인터페이스로 
+만들어 다형성을 이용해 변경이 용이하도록 설정함.
+
+다만 DIP와 OCP를 위배하는 부분이 있음 어디에?
+```java
+ private final MemberRepository memberRepository = new MemoryMemberRepository();
+    //private final DiscountPolicy discountPolicy = new FixDiscountPolicy();
+    //private final DiscountPolicy discountPolicy = new RateDiscountPolicy();
+    //수정하는 과정에서 DIP와 OCP 위반 이거를 어떻게 해결할 수 있을까?
+
+    //인터페이스만 의존하도록 설정했다. but 당연히 구현체가 없으니 널포인트익셉션 발생
+    private DiscountPolicy discountPolicy;
+    //해결하기 위해 누군가 구현 객체를 꽂아주어야 한다.
+```
+추상화와 구현체 모두에게 의존한다는 점에서 DIP 위반. 앱의 확장을 위해서 클라이언트 코드를 변경해야 한다는 점에서 OCP위반
+그렇다고 인터페이스에만 의존하도록 설정하면 당연하게도 구현체가 없으니 예외 발생.
+해결하기 위해서는 누군가 구현 객체를 설정해주어야 한다. 
+
+</div>
+</details>
