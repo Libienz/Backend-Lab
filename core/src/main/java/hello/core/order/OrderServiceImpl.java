@@ -9,8 +9,13 @@ import hello.core.member.MemoryMemberRepository;
 
 public class OrderServiceImpl implements OrderService{
 
-    private final MemberRepository memberRepository = new MemoryMemberRepository();
+    private final MemberRepository memberRepository;// = new MemoryMemberRepository();
     //private final DiscountPolicy discountPolicy = new FixDiscountPolicy();
+
+    public OrderServiceImpl(MemberRepository memberRepository, DiscountPolicy discountPolicy) {
+        this.memberRepository = memberRepository;
+        this.discountPolicy = discountPolicy;
+    }
     //private final DiscountPolicy discountPolicy = new RateDiscountPolicy();
     //수정하는 과정에서 DIP와 OCP 위반 이거를 어떻게 해결할 수 있을까?
 
