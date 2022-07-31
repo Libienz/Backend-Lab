@@ -125,7 +125,7 @@ MemberRepository m = new JdbcMemberReopsitory(); //변경 코드
 
 
 <details>
-<summary>02 예제 </summary>
+<summary>02 예제 with non Spring</summary>
 <div markdown="1">
 
 ## 비즈니스 요구사항
@@ -224,7 +224,70 @@ AppConfig 등장 : 구현 객체를 생성하고 연결하는 책임을 가지�
 
 ### IoC 컨테이너, DI Container
 - AppConfig 처럼 객체를 생성하고 관리하면서 의존관계를 연결해 주는 것을 IoC컨테이너 또는 DI컨테이너라고 한다.
-- 또는 어셈블러(조립자), 오브젝트 팩토리 등으로 불리기도 함 
+- 또는 어셈블러(조립자), 오브젝트 팩토리 등으로 불리기도 함
+
+</div>
+</details>
+
+<details>
+<summary>03 예제 with pring</summary>
+<div markdown="1">
+
+## 스프링으로 전환하기
+
+### AppConfig 스프링으로 변경
+
+- @Configuration 과 @Bean을 통해서
+```java
+@Configuration
+public class AppConfig {
+
+    @Bean
+    private MemberRepository memberRepository() {
+        return new MemoryMemberRepository();
+    }
+
+    @Bean
+    public MemberService memberService() {
+        return new MemberServiceImpl(new MemoryMemberRepository());
+    }
+
+    @Bean
+    public OrderService orderService() {
+        return new OrderServiceImpl(memberRepository(), discountPolicy());
+    }
+
+    @Bean
+    public DiscountPolicy discountPolicy() {
+        return new RateDiscountPolicy(); //여기만 갈아끼면 정률 할인정책으로!
+    }
+}
+
+```
+
+### ApplicationContext
+- 스프링을 모든 게 ApplicationContext로 부터 시작한다. 얘가 Bean객체를 관리함  
+```java
+ApplicationContext applicationContext = new AnnotationConfigApplicationContext(AppConfig.class); //어노테이션 기반 config
+```
+- 이 코드는 AppConfig에 있는 정보를 바탕으로 Bean 등록하고 객체를 관리하도록 하는 코드 
+
+### 스프링 컨테이너
+
+- ApplicationContext를 스프링 컨테이너라 한다.
+- 기존에는 개발자가 AppConfig를 사용해서 직접 객체를 생성하고 DI를 했지만 이제부터는 스프링 컨테이너를 통해서 사용한다.
+- 스프링 컨테이너는 @Configuration이 붙은 AppConfig를 설정 정보로 사용한다. 여기서 @Bean이라 적힌 메서드를 모두 호출해서 반환된 객체를 스프링 컨테이너에 등록한다.
+- 이렇게 스프링 컨테이너에 등록된 객체를 스프링 빈이라 한다.
+
+
+
+- 스프링 빈은 @Bean이 붙은 메서드의 명을 스프링 빈의 이름으로 사용한다 
+- 이전에는 개발자가 필요한 객체를 AppConfig를 사용해서 직접 조회했지만 이제부터는 스프링 컨테이너를 통해서 필요한 스프링 빈을 찾아야 한다. 
+- ac.getBean()메소드로 가능 
+- 스프링 컨테이너를 사용하면 어떤 장점이 있을까?
+- 지금까지는 아 다형성만으로 안되는 구나 SRP OCP DIP를 지키기 위해 AppConfig가 필요하구나 근데 이걸 Spring Bean으로 할 수 있네 요정도를 배웠고 이후에는 이걸 사용함으로써 얻을 수 있는 장점을 공부하게 될 것  
+
+
 
 </div>
 </details>
