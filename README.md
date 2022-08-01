@@ -297,5 +297,14 @@ ApplicationContext applicationContext = new AnnotationConfigApplicationContext(A
 - 요약 : 스프링 컨테이너를 생성하고 설정 정보를 참고해서 스프링 빈 등록 의존관계도 설정한다
 - 참고 : 스프링은 빈을 생성하고 의존관계를 주입하는 단계가 나누어져 있다. 그런데 이렇게 자바 코드로 스프링 빈을 등록하면 생성자를 호출하면서 의존관계 주입도 한번에 처리된다. 자세한 내용은 의존관계 자동 주입에서..
 
+### 컨테이너에 등록된 모든 빈 조회
+- 모든 빈 출력하기 
+- ac.getBeanDefinitionNames(); 스프링에 등록된 모든 빈 이름을 조회한다. 배열로 반환
+- ac.getBean(); 빈 이름으로 빈 객체(인스턴스)를 조회한다.
+- 애플리케이션 빈 출력하기
+- 스프링이 내부에서 사용하는 빈은 제외하고 내가 등록한 빈만 출력할 수 있게 하자
+- 스프링이 내부에서 사용하는 빈은 getRole()로 구분할 수 있다. 
+- ROLE_APPLICATION : 일반적으로 사용자가 정의한 빈
+- ROLE_INFRASTRUCTURE : 스프링이 내부에서 사용하는 빈 
 </div>
 </details>
