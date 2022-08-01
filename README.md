@@ -306,5 +306,10 @@ ApplicationContext applicationContext = new AnnotationConfigApplicationContext(A
 - 스프링이 내부에서 사용하는 빈은 getRole()로 구분할 수 있다. 
 - ROLE_APPLICATION : 일반적으로 사용자가 정의한 빈
 - ROLE_INFRASTRUCTURE : 스프링이 내부에서 사용하는 빈 
+
+### 스프링 빈 조회 - 상속관계
+- 부모타입으로 조회하면 자식 타입도 함께 조회한다.
+- 그래서 모든 자바 객체의 최고 부모인 Object타입으로 조회하면 모든 스프링 빈을 조회한다. 
+
 </div>
 </details>
