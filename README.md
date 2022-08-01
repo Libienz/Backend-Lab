@@ -311,5 +311,49 @@ ApplicationContext applicationContext = new AnnotationConfigApplicationContext(A
 - 부모타입으로 조회하면 자식 타입도 함께 조회한다.
 - 그래서 모든 자바 객체의 최고 부모인 Object타입으로 조회하면 모든 스프링 빈을 조회한다. 
 
+
+### BeanFactory와 ApplicationContext
+
+![img.png](img.png)
+
+- BeanFactory
+  - 스프링 컨테이너의 최상위 인터페이스
+  - 스프링 빈을 관리하고 조회하는 역할 담당
+  - 지금까지 우리가 사용했던 대부분의 기능은 (getBean과 같은..) BeanFactory가 제공하는 기능
+
+- ApplicationContext
+    - BeanFactory의 기능을 모두 상속 받아서 제공한다.
+    - 빈을 관리하고 검색하는 기능을 빈팩토리가 제공해주는데 두르이 차이는 부가기능의 차이이다.
+    - 애플리케이션 콘텍스트에 더 많은 부가기능이 있다는 뜻 
+
+- ApplicationContext가 제공하는 여러 부가기능
+    - 메세지 소스를 활용한 국제화 기능
+      - 한국에서 들어오면 한국어, 영어권에서 들어오면 영어
+    - 환경변수
+      - 로컬, 개발, 운영등을 구분해서 처리
+    - 애플리케이션 이벤트
+      - 이벤트를 발행하고 구독하는 모델을 편리하게 지원
+    - 편리한 리소스 조회
+      - 파일 클래스패스, 외부 등에서 리소스를 편리하게 조회
+
+![img_1.png](img_1.png)
+
+### 다양한 설정 형식 지원
+
+- 스프링 컨테이너는 다양한 형식의 설정 정보를 받아드릴 수 있게 유연하게 설계되어 있다.
+  - 자바 코드, XML, Groovy 등등.. 
+
+![img_2.png](img_2.png)
+
+### 스프링 빈 설정 메타 정보 - BeanDefinition
+
+- 스프링은 어떻게 이런 다양한 설정 형식을 지원하는가? 그 중심에는 BeanDefenition이라는 추상화가 있다.
+- 쉽게 이야기해서 역할과 구현을 개념적으로 나눈 것 
+  - XML을 읽어서 BeanDefinition을 만든다.
+  - 자바 코드를 읽어서 BeanDefinition을 만든다.
+  - 스프링 컨테이너는 자바 코드인지 XML인지 몰라도 된다. 오직 BeanDefinition만 알면 된다. 
+- BeanDefinition을 빈 설정 메타 정보라 한다.
+- @Bean, <bean>당 각각 하나씩 메타정보가 생성된다. 
+    
 </div>
 </details>
