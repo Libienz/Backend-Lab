@@ -367,5 +367,59 @@ ApplicationContext applicationContext = new AnnotationConfigApplicationContext(A
 - 고객 트래픽이 초당 100이 나오면 100개 객체가 생성되고 소멸된다. -> 메모리 낭비가 심함
 - 해결 방안은 해당 객체가 딱 1개만 생성되고, 공유하도록 설계하면 된다. -> <U>**싱글톤 패턴***</U>
 
+## 싱글톤 패턴
+- 클래스의 인스턴스가 딱 1개만 생성되는 것을 보장하는 디자인 패턴
+- 그래서 2개 이상 못하도록 막아야한다. by private 생성자 
+
+```java
+package hello.core.singleton;
+
+public class SingletonServiceTest {
+
+    private static final SingletonServiceTest instance = new SingletonServiceTest(); //하나만 만들어서 가지고 있기
+    
+    private SingletonServiceTest() { //내부에서는 만들 수 있지만 그럴 일 없음 외부에서 생성할 수 없도록 하는 역할
+    }
+
+    public static SingletonServiceTest getInstance() {
+        return instance;
+    }
+    
+    public void logic() {
+        System.out.println("싱글톤 객체 로직 호출");
+    }
+}
+
+```
+
+- static 영역에 객체 instance를 미리 하나 생성해서 올려둔다.
+- 이 객체 인스턴스가 필요하면 오직 getInstance() 메서드를 통해서만 조회할 수 있다.
+- 딱 1개의 객체 인스턴스만 존재해야 함으로 생성자를 private으로 막아서 혹시라도 외부에서 new 키워드로 객체 인스턴스가 생성되는 것을 막는다.
+
+
+- 싱글톤 패턴 문제점
+  - 싱글톤 패턴 구현 코드의 양이 많음
+  - 의존관계상 클라이언트가 구체 클래스에 의존한다 DIP 위반
+  - 클라이언트 구체 클래스에 의존해서 OCP 원칙 위반 가능성 높음
+  - 테스트 어려움
+  - 내부 속성의 변경 초기화 어려움
+  - 자식 클래스 만들기 어려움
+  - 유연성 떨어짐
+  - 안티 패턴
+
+
+## 싱글톤 컨테이너
+
+스프링 컨테이너는 싱글톤 패턴의 문제점을 해결하면서, 객체 인스턴스를 싱글톤으로 관리한다. 지금까지 우리가 학습한 스프링 빈이 바로 싱글톤으로 관리되는 빈이다.
+
+- 스프링 컨테이너는 싱글톤 패턴을 적용하지 않아도 객체 인스턴스를 싱글톤으로 관리
+  - 컨테이너 생성과정을 생각해보자 컨테이너는 객체를 하나만 생성해서 관리한다.
+- 스프링 컨테이너는 싱글톤 컨테이너 역할을 한다. 이렇게 싱글톤 객체를 생성하고 관리하는 기능을 싱글톤 레지스트리라 한다.
+- 스프링 컨테이너의 이런 기능 덕분에 싱글톤 패턴의 모든 단점을 해결하면서 객체를 싱글톤으로 유지 가능하다.
+  - 지저분한 코드 없음
+  - DIP, OCP, 테스트 private 생성자로부터 자유롭게 싱글톤 사용가능
+
+
+
 </div>
 </details>
