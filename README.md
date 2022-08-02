@@ -125,7 +125,7 @@ MemberRepository m = new JdbcMemberReopsitory(); //변경 코드
 
 
 <details>
-<summary>02 예제 with non Spring</summary>
+<summary>02 예제 스프링 없이</summary>
 <div markdown="1">
 
 ## 비즈니스 요구사항
@@ -230,7 +230,7 @@ AppConfig 등장 : 구현 객체를 생성하고 연결하는 책임을 가지�
 </details>
 
 <details>
-<summary>03 예제 with pring</summary>
+<summary>03 예제 스프링으로 refactoring</summary>
 <div markdown="1">
 
 ## 스프링으로 전환하기
@@ -355,5 +355,17 @@ ApplicationContext applicationContext = new AnnotationConfigApplicationContext(A
 - BeanDefinition을 빈 설정 메타 정보라 한다.
 - @Bean, <bean>당 각각 하나씩 메타정보가 생성된다. 
     
+</div>
+</details>
+
+<details>
+<summary>04 싱글톤 </summary>
+<div markdown="1">
+
+## 싱글톤의 필요성
+- 우리가 만들었던 스프링 없는 순수한 DI 컨테이너인 AppConfig는 요청을 할 때 마다 객체를 새로 생성한다.
+- 고객 트래픽이 초당 100이 나오면 100개 객체가 생성되고 소멸된다. -> 메모리 낭비가 심함
+- 해결 방안은 해당 객체가 딱 1개만 생성되고, 공유하도록 설계하면 된다. -> <U>**싱글톤 패턴***</U>
+
 </div>
 </details>
