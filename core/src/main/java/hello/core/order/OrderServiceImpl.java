@@ -12,6 +12,10 @@ public class OrderServiceImpl implements OrderService{
     private final MemberRepository memberRepository;// = new MemoryMemberRepository();
     //private final DiscountPolicy discountPolicy = new FixDiscountPolicy();
 
+    public MemberRepository getMemberRepository() {
+        return memberRepository;
+    }
+
     public OrderServiceImpl(MemberRepository memberRepository, DiscountPolicy discountPolicy) {
         this.memberRepository = memberRepository;
         this.discountPolicy = discountPolicy;
