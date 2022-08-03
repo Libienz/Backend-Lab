@@ -564,7 +564,29 @@ public class AutoAppConfig {
 
 - 참고 : 사실 애노테이션에는 상속관계라는 것이 없다 그래서 이렇게 애노테이션이 특정 애노테이션을 들고 있는 것을 인식할 수 있는 것은 자바 언어가 지원하는 기능은 아니고 스프링이 지원하는 기능이다.
 
+## 필터
+- includeFilters : 스캔 대상을 추가로 지정
+- excludeFilters : 스캔 제외 대상 지정
 
+### FilterType 옵션
+
+- ANNOTATION : 기본값, 애노테이션을 인식해서 동작
+- ASSIGNABLE_TYPE : 지정한 타입과 자식 타입을 인식해서 동작
+- ASPECTJ : AspectJ패턴 사용
+- REGEX : 정규표현식
+- CUSTOM : TypeFilter라는 인터페이스를 구현해서 처리
+
+- 사실 인클루드 익스클루드 둘다 사용하는 일은 거의 없음 되도록 기본 설정에 맞추어 사용하자
+
+## 중복 등록과 충돌 
+- 컴포넌트 스캔에서 같은 빈 이름을 등록하면 어떻게 될까?
+
+- 자동 빈 등록 vs 자동 빈 등록 // 자동 빈 등록이 스캔 말하는거
+  - ConflictingBeanDefinitionException 발생
+- 수동 빈 등록 vs 자동 빈 등록
+  - 오버라이딩 되어서 수동 빈 등록이 우선권을 가진다
+  - 근데 이제는 잡기 어려운 버그로 간주하여 스프링 부트로 실행하면 에러를 낸다.
+  - application.properties에 오버라이딩 true로 하여 설정할 수 있긴 함 
 </div>
 </details>
 
