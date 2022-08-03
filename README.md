@@ -504,3 +504,73 @@ public class AppConfig {
 
 </div>
 </details>
+
+
+<details>
+<summary>05 컴포넌트 스캔</summary>
+<div markdown="1">
+
+## 컴포넌트 스캔과 의존관계 자동 주입 시작하기 
+
+- AppConfig의 정보가 수십 수백개가 되면 누락의 여지도 있고 설정정보도 커지고 일일이 등록하기도 귀찮
+- 스프링에서는 설정 정보가 없어도 자동으로 스프링 빈을 등록하는 컴포넌트 스캔이라는 기능 제공
+- 또한 의존관계도 자동으로 주입하는 @Autowired라는 기능도 제공 
+
+- 컴포넌트 스캔을 사용하려면 먼저 @ComponentScan을 설정정보에 붙여주면 된다.
+- 기존의 AppConfig와는 다르게 @Bean으로 등록한 클래스가 하나도 없다!
+
+```java
+package hello.core;
+
+
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+
+@Configuration
+@ComponentScan(
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = Configuration.class)
+)
+public class AutoAppConfig {
+    
+    
+}
+
+```
+
+- 컴포넌트 스캔은 이름 그대로 @Component 애노테이션이 붙은 클래스를 스캔해서 스프링 빈으로 등록한다.
+- @Configuration과 같은 애노테이션도 스캔의 대상이 되는 이유는 코드 열어보면 얘네도 Component를 가지고 있기 때문 
+- 빈으로 등록은 되지만 해당 빈의 의존관계 주입은 어떻게 ?? -> Autowired 타입에 맞는 것을 긁어와서 주입한다 
+
+## 탐색 위치와 기본 스캔 대상 
+
+- 탐색할 패키지의 시작 위치 지정 가능
+- 모든 자바 클래스를 다 스캔하면 오래 걸림 그래서 꼭 필요한 위치부터 탐색하도록 지정 가능
+```java
+@ComponentScan(
+        basePackages = "hello.core"
+)
+```
+- 지정하지 않으면 즉 디폴트는 설정 정보 클래스의 패키지가 시작 위치가 된다. 코드 상단에 있는 패키지 말하는 것
+- 권장하는 방법은 패키지 위치를 지정하지 않고 설정 정보 클래스의 위치를 프로젝트 최상단에 두는 것! 
+- 즉 hello.core에 넣어라 
+
+## 컴포넌트 스캔 기본 대상
+- @Component 
+- @Controller : MVC 컨트롤러로 인식
+- @Service : 특별한 처리 없음 개발자들이 계층 인식을 위한 표시막
+- @Repository : 데이터 접근 계층으로 인식 계층의 예외를 스프링 예외로 변환 
+- @Configuration : 설정 정보로 인식 싱글톤을 유지하도록 추가 처리 
+
+- 참고 : 사실 애노테이션에는 상속관계라는 것이 없다 그래서 이렇게 애노테이션이 특정 애노테이션을 들고 있는 것을 인식할 수 있는 것은 자바 언어가 지원하는 기능은 아니고 스프링이 지원하는 기능이다.
+
+
+</div>
+</details>
+
+<details>
+<summary></summary>
+<div markdown="1">
+
+</div>
+</details>
