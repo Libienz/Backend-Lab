@@ -498,7 +498,8 @@ public class AppConfig {
 - //bean.getClass() = class hello.core.AppConfig$$EnhancerBySpringCGLIB$$9756aa7e
 - 순수한 클래스라면 class hello.core.AppConfig 이렇게 출력되어야 하는 데 CGLIB?
 - 이것은 내가 만든 클래스가 아니라 스프링이 CGLIB라는 바이트코드 조작 라이브러리를 사용해서 AppCofnig클래스를 상속받은 임의의 다른 클래스를 만들고, 그 다른 클래스를 스프링 빈으로 등록한 것이다!
-
+- 그 임의의 다른 클래스가 바로 싱글톤이 보장되도록 해준다.
+- 있으면 찾아서 반환하고 아니면 등록하고 반환
 
 
 </div>
