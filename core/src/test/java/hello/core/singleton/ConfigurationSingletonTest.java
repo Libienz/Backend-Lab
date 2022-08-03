@@ -31,4 +31,14 @@ public class ConfigurationSingletonTest {
 
 
     }
+    
+    @Test
+    void configurationDeep() {
+        //컨피그도 빈이다.
+        ApplicationContext ac = new AnnotationConfigApplicationContext(AppConfig.class);
+        AppConfig bean = ac.getBean(AppConfig.class);
+        System.out.println("bean.getClass() = " + bean.getClass());
+        //bean.getClass() = class hello.core.AppConfig$$EnhancerBySpringCGLIB$$9756aa7e
+        
+    }
 }

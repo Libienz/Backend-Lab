@@ -439,6 +439,67 @@ public class SingletonServiceTest {
 - 실무에서 이런 경우를 종종 보는데 이로인해 정말 해결하기 어려운 큰 문제들이 터진다.
 - 진짜 공유 필드는 조심해야 한다! 스프링 빈은 항상 무상태로 설계하자 
 
+## Configuration 과 싱글톤 
+
+```java
+package hello.core;
+
+import hello.core.discount.DiscountPolicy;
+import hello.core.discount.FixDiscountPolicy;
+import hello.core.discount.RateDiscountPolicy;
+import hello.core.member.MemberRepository;
+import hello.core.member.MemberService;
+import hello.core.member.MemberServiceImpl;
+import hello.core.member.MemoryMemberRepository;
+import hello.core.order.OrderService;
+import hello.core.order.OrderServiceImpl;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+
+@Configuration
+public class AppConfig {
+
+    @Bean
+    public MemberRepository memberRepository() {
+        System.out.println("AppConfig.memberRepository");
+        return new MemoryMemberRepository();
+    }
+
+    @Bean
+    public MemberService memberService() {
+        System.out.println("AppConfig.memberService");
+        return new MemberServiceImpl(memberRepository());
+    }
+
+    @Bean
+    public OrderService orderService() {
+        System.out.println("AppConfig.orderService");
+        return new OrderServiceImpl(memberRepository(), discountPolicy());
+    }
+
+    @Bean
+    public DiscountPolicy discountPolicy() {
+        System.out.println("AppConfig.discountPolicy");
+        return new RateDiscountPolicy(); //여기만 갈아끼면 정률 할인정책으로!
+    }
+}
+
+```
+
+- 위의 코드를 보면 memberRepository인스턴스는 OrderService에서도, MemberService에서도 생성되어 여러개의 인스턴스가 존재하는 것처럼 보인다
+- 싱글톤 레지스트리 기능을 제공한다고 했는데??
+- 테스트를 통해 알아본 결과 싱글톤은 유지되고 있었다.
+
+## Configuration과 바이트코드 조작의 마법
+
+- Configuration 어노테이션이 붙어있는 AppConfig에서 싱글톤을 유지시킨다
+- AppConfig도 관리되는 빈 중 하나임. 빈을 뽑아와서 출력해보자
+- //bean.getClass() = class hello.core.AppConfig$$EnhancerBySpringCGLIB$$9756aa7e
+- 순수한 클래스라면 class hello.core.AppConfig 이렇게 출력되어야 하는 데 CGLIB?
+- 이것은 내가 만든 클래스가 아니라 스프링이 CGLIB라는 바이트코드 조작 라이브러리를 사용해서 AppCofnig클래스를 상속받은 임의의 다른 클래스를 만들고, 그 다른 클래스를 스프링 빈으로 등록한 것이다!
+
+
 
 </div>
 </details>
