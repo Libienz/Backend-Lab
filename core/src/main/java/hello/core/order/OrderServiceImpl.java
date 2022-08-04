@@ -19,7 +19,7 @@ public class OrderServiceImpl implements OrderService{
         return memberRepository;
     }
 
-    @Autowired
+    @Autowired //생성자가 한개라면 생략해도 괜춘 요새는 생략하는 추세임
     public OrderServiceImpl(MemberRepository memberRepository, DiscountPolicy discountPolicy) {
         this.memberRepository = memberRepository;
         this.discountPolicy = discountPolicy;
