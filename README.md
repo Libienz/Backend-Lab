@@ -670,8 +670,72 @@ public class AutoAppConfig {
 //@Qualifier("mainDiscountPolidy") 요렇게 해도 컴파일 오류가 안남 .. 찾기 힘든 오류 
 @MainDiscountPolicy //요거는 오류 잡아내고 가시성도 좋음 
 ```
-- 가져다 쓰는 부분에도 우리가 만든 애노테이션 붙여주면 됨 
+- 가져다 쓰는 부분에도 우리가 만든 애노테이션 붙여주면 됨
 - 애노테이션에는 상속이라는 개념이 없다 여러 애노테이션을 모아서 사용하는 기능은 스프링이 지원해주는 기능이다. 
+
+## 조회한 빈이 모두 필요할 때 List, Map 활용
+- 의도적으로 정말 해당 타입의 스프링 빈이 다 필요한 경우도 있다. 
+- 예를 들어서 할인 서비스를 제공하는데, 클라이언트가 할인의 종류(rate, fix)를 선택할 수 있다고 가정해보자.
+- 스프링을 사용하면 소위말하는 전략 패턴을 매우 간단하게 구현할 수 있다. 
+
+```java
+package hello.core.autowired;
+
+import hello.core.AutoAppConfig;
+import hello.core.discount.DiscountPolicy;
+import hello.core.member.Grade;
+import hello.core.member.Member;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+import java.util.List;
+import java.util.Map;
+
+public class AllBeanTest {
+
+    @Test
+    void findAllBean() {
+        AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(AutoAppConfig.class, DiscountService.class);
+        DiscountService discountService = ac.getBean(DiscountService.class);
+        System.out.println("discountService = " + discountService);
+        int discountA = discountService.discount(new Member(1L, "userA", Grade.VIP), 20000, "fixDiscountPolicy");
+        int discountB = discountService.discount(new Member(2L, "userB", Grade.VIP), 20000, "rateDiscountPolicy");
+
+        Assertions.assertThat(discountA).isEqualTo(1000);
+        Assertions.assertThat(discountB).isEqualTo(2000);
+
+    }
+
+    static class DiscountService {
+        private final Map<String, DiscountPolicy> policyMap;
+        private final List<DiscountPolicy> policies;
+
+
+        @Autowired
+        public DiscountService(Map<String, DiscountPolicy> policyMap, List<DiscountPolicy> policies) {
+            this.policyMap = policyMap;
+            this.policies = policies;
+            System.out.println("policyMap = " + policyMap);
+            System.out.println("policies = " + policies);
+
+
+        }
+
+        public int discount(Member member, int price, String discountCode) {
+
+            DiscountPolicy discountPolicy = policyMap.get(discountCode);
+            return discountPolicy.discount(member, price);
+        }
+
+
+    }
+}
+
+```
+- 이런식으로도 다형성 구현할 수 있고 도움되는 경우가 꽤 있다. 
+
 </div>
 </details>
 
