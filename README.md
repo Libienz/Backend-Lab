@@ -823,5 +823,19 @@ public class AllBeanTest {
 - 스프링 컨테이너는 프로토타입 빈을 생성하고, 의존관계 주입, 초기화까지만 처리한다
 - 이후 스프링 컨테이너는 생성된 프로토타입 빈을 관리하지 않는다. 프로토 타입 빈을 관리할 책임은 클라이언트에게
 - 그래서 @PreDestroy 같은 종료 메서드가 호출되지 않는다. 필요하면 따로 Destroy 메소드를 호출해야 ..
+
+### 싱글톤 빈에서 프로토 타입 빈 사용
+- clientBean이라는 싱글톤 빈에서 prototypeBean을 주입 받아서 사용한다고 쳐보자
+- clientBean의 초기화 시점은 스프링 컨테이너의 생성 때 임으로 이후 prototypeBean과 관련된 로직을 여러번 호출해도 prototypeBean은 새 것이 사용되는 게 아니라
+- 계속해서 처음에 주입되었던 그 빈이 로직에 사용되게 된다. 
+- 이는 우리가 원하는 로직 구성이 아님 이를 해결할 수 있는 방법이 없을까?
+
+### 프로토타입 스코프 - 싱글톤 빈과 함께 사용시 Provider로 문제 해결
+
+### ObjectProvider
+- DL(dependency lookup) : 의존관계를 외부에서 주입(DI)받는게 아니라 직접 필요한 의존관계를 찾음 
+- 지정한 빈을 컨테이너에서 대신 찾아주는 DL서비스를 제공하는 것이 바로 ObjectProvider
+### JSR-330 Provider
+- ObjectProvider와 다르게 자바 표준. 사용하기 위해서는 라이브러리 그래들에 추가해야 함 
 </div>
 </details>
