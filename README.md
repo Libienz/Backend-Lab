@@ -847,6 +847,25 @@ public class AllBeanTest {
   - session : HTTP Session과 동일한 생명주기를 가지는 스코프
   - application : 서블릿 컨텍스트와 동일한 생명주기를 가지는 스코프
   - websocket : 웹 소켓과 동일한 생명주기를 가지는 스코프
-- 
+  - request 스코프를 대표 예제로 아래에서 설명할 것 나머지도 범위만 다르지 동작 방식은 비슷하다.
+- MyLogger 클래스의 생성
+  - 로그를 출력하기 위한 MyLogger 클래스 request 스코프로 지정
+  - 이제 이 빈은 HTTP 요청 당 하나씩 생성되고 HTTP 요청이 끝나는 시점에 소멸된다. 
+  - 이 빈이 생성되는 시점에 자동으로 @PostConstruct 초기화 메서드를 사용해서 uuid를 생성해서 저장해둔다. 
+- 로거가 잘 작동하는지 확인하는 테스트 컨트롤러
+  - HttpServletRequest를 통해서 요청 URL을 받았다.
+  - myLogger는 HTTP 요청 당 각각 구분 됨으로 다른 HTTP 요청 떄문에 값이 섞이는 걱정은 하지 않아도 된다????
+- 비즈니스 로직이 있는 서비스계층
+ 
+- 실행하면 -> runtime error
+- request 스코프 빈을 주입하는 과정에서 오류가 발생한 것 싱글톤 빈들은 컨테이너의 실행과 동시에 제작되지만 request는 그렇지 않기때문
+- 이를 해결하는 방법은 스코프와 Provider
+- Provider
+  - ObjectProvider를 사용해 myLogger를 주입하는 것이 아니라 myLogger를 찾을 수 있는 애를 필드에 설정해둔다.
+  - 적절한 시점에 호출 -> 해당 빈을 이용할 수 있다.
+- Scope와 프록시
+  - @Scope(value = "reques", proxyMode = ScopedProxyMode.TARGET_CLASS)
+  - 이렇게 하면 가짜 프록시 클래스를 만들어 두고 http request와 상관없이 가짜 프록시 클래스를 다른 빈에 미리 주입해 둘 수 있다.
+  - 이렇게 함으로써 이전의 간단한 코드로 원복 가능 
 </div>
 </details>
