@@ -182,9 +182,67 @@
 
 ![img_7.png](img_7.png)
 
+</div>
+</details>
 
+<details>
+<summary> 01 서블릿 실습 </summary>
+<div markdown="1">
 
+## Hello 서블릿
 
+- 스프링 부트 환경에서 서블릿을 등록하고 사용해보자
+- 참고
+  - 서블릿은 톰캣 같은 웹 애플리케이션 서버를 직접 설치하고 그 위에서 서블릿 코드를 클래스 파일로 빌드해서 올린 다음, 톰캣 서버를 실행하면 된다.
+  - 하지만 이 과정은 매우 번거롭
+  - 스프링 부트는 톰캣 서버를 내장하고 있음으로 톰캣 서버 설치 없이 편리하게 서블릿 코드를 실행할 수 있다.
+
+### 스프링 부트 서블릿 환경 구성
+
+- @ServletComponentScan
+  - 스프링 부트는 서블릿을 직접 등록해서 사용할 수 있도록 @ServletComponentScan을 지원
+  - 다음과 같이 추가하자 
+
+```java
+@ServletComponentScan // 서블릿 자동 등록
+@SpringBootApplication
+public class ServletApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(ServletApplication.class, args);
+	}
+
+}
+
+```
+
+### 서블릿 등록하기
+
+```java 
+@WebServlet(name = "helloServlet", urlPatterns = "/hello")
+public class HelloServlet extends HttpServlet {
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        System.out.println("HelloServlet.service");
+        System.out.println("request = " + request);
+        System.out.println("response = " + response);
+        String username = request.getParameter("username");
+        System.out.println("username = " + username);
+
+        response.setContentType("text/plain");
+        response.setCharacterEncoding("utf-8");
+        response.getWriter().write("hello " + username);
+    }
+}
+```
+
+- @WebServlet 서블릿 애노테이션
+  - name : 서블릿 이름
+  - urlPatterns : URL 매핑
+  - HTTP 요청을 통해 매핑된 URL이 호출되면서 서블릿 컨테이너는 service 메소드 실행
+  
 
 
 
