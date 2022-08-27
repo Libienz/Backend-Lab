@@ -240,7 +240,7 @@ public class HelloServlet extends HttpServlet {
 
 - @WebServlet 서블릿 애노테이션
   - name : 서블릿 이름
-  - urlPatterns : URL 매핑
+  - urlPatterns : URL 매핑 
   - HTTP 요청을 통해 매핑된 URL이 호출되면서 서블릿 컨테이너는 service 메소드 실행
   
 
