@@ -25,7 +25,7 @@
 - WAS가 웹서버의 기능 + 알파라면 .. 
 - WAS, DB만으로 시스템 구성이 가능하지 않을까?
 - WAS는 정적 리소스, 애플리케이션 로직 모두를 제공 가능하니까
-- BUT WAS가 너무 많은 역할을 담당하면 서버 과부하 우려..
+- BUT WAS가 너무 많은 역할을 담당하면 서버 과부하 우려..Scalability 없음
 - WAS 장애시 오류 화면 조차도 노출 불가능 할 수 있음
 
 ## 웹 시스템 구성 - WEB,WAS,DB
@@ -47,7 +47,7 @@
 ![img.png](img.png)
 
 - 하지만 우리가 핵심적으로 하고 싶은 일은 초록색 박스
-- 서블릿은 여기에서 우리가 의미 있는 비즈니스 로직에 집중할 수 있도록 나머지 일들을 처리해주는 역할을 한다
+- 서블릿은 여기에서 우리가 의미 있는 비즈니스 로직에 집중할 수 있도록 나머지 일들을 처리해주는 역할을 한다 (Marshalling unmarshalling 등등)
 - 즉 요청 정보를 편리하게 사용할 수 있도록 하고 응답 정보를 편리하게 만들 수 있도록 도와 줌
 - HTTP 스펙을 사용하기가 매우 편리해짐 
 
@@ -190,10 +190,11 @@
 <div markdown="1">
 
 ## Hello 서블릿
-
+- 서블릿이란 Dynamic Web Page를 만들 때 사용되는 자바 기반의 웹 어플리케이션 프로그래밍 기술 (req, resp marshalling, unmarshalling)
+  - 우리가 housekeep work(잡일)에서 벗어나 서비스 로직에 집중할 수 있도록 도우는 기술
 - 스프링 부트 환경에서 서블릿을 등록하고 사용해보자
 - 참고
-  - 서블릿은 톰캣 같은 웹 애플리케이션 서버를 직접 설치하고 그 위에서 서블릿 코드를 클래스 파일로 빌드해서 올린 다음, 톰캣 서버를 실행하면 된다.
+  - 서블릿은 톰캣 같은 웹 애플리케이션 서버를 직접 설치하고 그 위에서 서블릿 코드를 클래스 파일로 빌드해서 올린 다음, 톰캣 서버를 실행하면 된다. 
   - 하지만 이 과정은 매우 번거롭
   - 스프링 부트는 톰캣 서버를 내장하고 있음으로 톰캣 서버 설치 없이 편리하게 서블릿 코드를 실행할 수 있다.
 
@@ -204,7 +205,7 @@
   - 다음과 같이 추가하자 
 
 ```java
-@ServletComponentScan // 서블릿 자동 등록
+@ServletComponentScan // 서블릿 자동 등록. 하위 패키지의 컴포넌트 스캔해서 서블릿으로 등록한다
 @SpringBootApplication
 public class ServletApplication {
 
@@ -219,21 +220,25 @@ public class ServletApplication {
 ### 서블릿 등록하기
 
 ```java 
+
 @WebServlet(name = "helloServlet", urlPatterns = "/hello")
 public class HelloServlet extends HttpServlet {
 
+    //서블릿이 호출되면 service메소드가 실행된다.
+    //웹브라우저가 만든 http메세지가 Servlet에 의해 parsing, request객체와 response객체를 서블릿에 던진다.
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
         System.out.println("HelloServlet.service");
         System.out.println("request = " + request);
         System.out.println("response = " + response);
-        String username = request.getParameter("username");
+        String username = request.getParameter("username"); //http메세지에서 query parameter를 쏙 빼서 읽는다. ../hello?username=kim 이라고 요청이 오면 여기에선 kim을 반환해줄 것임
         System.out.println("username = " + username);
 
-        response.setContentType("text/plain");
-        response.setCharacterEncoding("utf-8");
-        response.getWriter().write("hello " + username);
+        //응답 보내보기
+        response.setContentType("text/plain"); //단순 문자를 보낸다.
+        response.setCharacterEncoding("utf-8"); //인코딩 정보 알려주기
+        response.getWriter().write("hello " + username); //http message body에 write한다.
     }
 }
 ```
@@ -243,6 +248,8 @@ public class HelloServlet extends HttpServlet {
   - urlPatterns : URL 매핑 
   - HTTP 요청을 통해 매핑된 URL이 호출되면서 서블릿 컨테이너는 service 메소드 실행
   
+![img_8.png](img_8.png)
+
 
 
 
