@@ -539,6 +539,47 @@ public class ResponseHeaderServlet extends HttpServlet {
 
 ```
 
+### HTTP 응답 데이터 - 단순 텍스트, HTML
+
+- HTTP 응답 메시지는 주로 다음 내용중 하나를 담아서 전달
+  - 단순 텍스트 응답
+    - writer.println
+  - HTML 응답 
+  - HTTP API - MessageBody JSON 응답
+- HTML 응답: 이런식으로 써야 한다.. 이럴꺼면 다른 점이 뭐야? -> 받았을 때 어떤 형식인지 알아야 클라이언트든 서버든 파싱을 올바르게 한다
+
+```java
+package hello.servlet.basic.response;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+@WebServlet(name = "responseHtmlServlet", urlPatterns = "/response-html")
+public class ResponseHtmlServlet extends HttpServlet {
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        //Content-Type: text/html;charset=utf-8
+        response.setContentType("text/html");
+        response.setCharacterEncoding("utf-8");
+
+        PrintWriter writer = response.getWriter();
+        writer.println("<html>");
+        writer.println("<body>");
+        writer.println("    <div>안녕?</div>");
+        writer.println("</body>");
+        writer.println("</html>");
+
+    }
+}
+
+```
 
 </div>
 </details>
