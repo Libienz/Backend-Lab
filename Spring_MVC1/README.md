@@ -361,9 +361,116 @@ public class RequestParamServlet extends HttpServlet {
 </html>
 ```
 
-### HTTP message body에 데이터를 직접 담아서 요청
-- HTTP API에서 주로 사용하는 방식임 
-- 데이터 형식은 주로 JSON을 사용한다
+### HTTP 요청 데이터 - API 메시지 바디 - 단순 텍스트 
+- 앞서 배운 GET-쿼리파라미터 방식과 POST form데이터를 사용하는 방식은 웹브라우저에서 일반적으로 html을 사용할 때 사용하는 방식임
+- 이번 방식은 message body에 데이터를 직접 실어 보내는 방식이다.
+  - 서버와 서버가 통신할때, 안드로이드같은 앱에서 웹서버에 요청할 때, javascript를 사용한 요청을 할 때 API방식을 주로 사용한다.
+  - HTTP API에서 주로 사용하는 방식임 
+  - 데이터 형식은 주로 JSON을 사용한다 (de facto standard)
+- 다음은 JSON이 아닌 단순 텍스트 메시지를 HTTP 메시지 바디에 담아서 전송하고 읽어보는 과정
+
+```java
+package hello.servlet.basic.request;
+
+import org.springframework.util.StreamUtils;
+
+import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+@WebServlet(name = "requestBodyStringServlet", urlPatterns = "/request-body-string")
+public class RequestBodyStringServlet extends HttpServlet {
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        //API 방식에서 데이터를 꺼내는 방법은 아래와 같다.
+        ServletInputStream inputStream = request.getInputStream(); //API방식에서 message body의 내용을 byte code형태로 얻는다.
+        String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);//byte code를 String으로 copy하는데 encoding 정보는 UTF_8 (byte를 문자로, 문자를 byte로 바꿀 때는 encoding정보를 알려주어야 함!
+
+        System.out.println("messageBody = " + messageBody);
+        response.getWriter().write("ok");
+
+    }
+}
+```
+- http 메시지 바디의 데이터를 InputStream메소드를 이용해 Byte code로 꺼내올 수 있음
+- copyTo를 이용해 캐스팅하고 클라이언트가 던진 메시지 바디를 읽어올 수 있는 것을 볼 수 있음 
+- 다만 해당 방법은 json이 아닌 Text/plain을 꺼내온 것 이어 json전송, 데이터 추출과정을 살펴보자 
+
+### HTTP 요청 데이터 - API 메시지 바디 - JSON
+- POST http://localhost:8080/request-body-json
+- content-type: application/json 
+  - json은 또 다른 데이터 형식이지만 결국 메시지 바디를 추출해보면 똑같이 추출할 수 있음
+
+- 메시지 바디에서 읽어온 json 내용을 기반으로 객체를 만들기 위해 클래스 생성
+```java
+package hello.servlet.basic;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class HelloData {
+
+  private String username;
+  private int age;
+
+}
+```
+- json데이터를 파싱하여 객체를 만드는 서블릿
+```java
+package hello.servlet.basic.request;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hello.servlet.basic.HelloData;
+import org.springframework.util.StreamUtils;
+
+import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+@WebServlet(name = "RequestBodyJsonServlet", urlPatterns = "/request-body-json")
+public class RequestBodyJsonServlet extends HttpServlet {
+
+    private ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        ServletInputStream inputStream = request.getInputStream();
+        String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+        System.out.println("messageBody = " + messageBody);
+        // {"username": "hello", "age": 20} 이렇게 메시지 바디를 채워넣고 content-type을 json으로 설정하여 보내도 위의 방식으로 출력해도
+        // 그냥 문자열이 출력된다. json도 문자기 때문!
+        // json data를 HelloData객체로 만들고 싶으면 jackson library 임포트 하고 object mapping을 해야함
+        HelloData helloData = objectMapper.readValue(messageBody, HelloData.class);
+        System.out.println("helloData.getUsername() = " + helloData.getUsername());
+        System.out.println("helloData.getAge() = " + helloData.getAge());
+
+        response.getWriter().write("ok");
+
+    }
+}
+```
+- json도 또 다른 데이터 형식일 뿐이다. 
+  - 단순 텍스트형식의 메시지 바디를 읽을 때 처럼 inputStream으로 메시지 바디를 통째로 읽어온다.
+  - 그 후에 objectMapper를 통해 객체를 생성해내는 것을 볼 수 있다.
+  - 다만 궁금한 점은.. 단순 텍스트로 해도 동작이 되는데 왜 굳이 json형식이라는 것이 필요할까?
+    - json이 경량화 되어있고 서로 다른 언어들간에 데이터를 주고받을 수 있도록 만들어졌기 떄문..
+
+
 
 </div>
 </details>
