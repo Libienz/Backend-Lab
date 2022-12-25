@@ -190,8 +190,8 @@
 <div markdown="1">
 
 ## Hello 서블릿
-- 서블릿이란 Dynamic Web Page를 만들 때 사용되는 자바 기반의 웹 어플리케이션 프로그래밍 기술 (req, resp marshalling, unmarshalling)
-  - 우리가 housekeep work(잡일)에서 벗어나 서비스 로직에 집중할 수 있도록 도우는 기술
+- 서블릿이란 요청이 들어왔을 때 request를 parsing하고 response를 주조해주는 기술 (req, resp marshalling, unmarshalling)
+  - housekeep work(잡일)를 대신 해줌으로써 서비스 로직에 집중할 수 있도록 함
 - 스프링 부트 환경에서 서블릿을 등록하고 사용해보자
 - 참고
   - 서블릿은 톰캣 같은 웹 애플리케이션 서버를 직접 설치하고 그 위에서 서블릿 코드를 클래스 파일로 빌드해서 올린 다음, 톰캣 서버를 실행하면 된다. 
@@ -250,8 +250,120 @@ public class HelloServlet extends HttpServlet {
   
 ![img_8.png](img_8.png)
 
+### Http Servlet Request Handling
+- Http 요청 메시지를 개발자가 직접 파싱해서 사용해도 되지만, 매우 불편.
+- 서블릿은 HTTP 요청 메시지를 편리하게 사용할 수 있도록 개발자 대신에 HTTP 요청 메시지를 파싱한다. 
+- /basic/request/RequestHeaderServlet에서 어떤 것들을 추출할 수 있는지 작성해보았음 
+
+### Http 요청 데이터
+- 위에서 해본 것은 request에 대한 다양한 정보를 뽑아본 것임 
+- 다만 이번에 살펴 볼 것은 보내는 '데이터'를 파싱하는 과정
+- Http 요청 메시지를 통해 클라이언트에서 서버로 '데이터'를 전달하는 방법은 다음 3가지 방법을 벗어나지 않는다.
+
+#### GET - 쿼리 파라미터
+- /url?username=hello&age=20
+- 메시지 바디 없이, URL의 쿼리 파라미터에 데이터를 포함해서 전달
+- 검색, 필터, 페이징등에서 많이 사용하는 방식
+- 구글에 Hello를 검색했을 때 URL을 살펴보면 쿼리파라미터를 이용한 것을 볼 수 있음
+#### POST - HTML Form
+- content-type:application/x-www-form-urlencoded
+- 메시지 바디에 쿼리 파라미터 형식으로 전달 username=hello&age=20
+- 예) 회원 가입, 상품 주문, HTML Form 사용
+- 회원가입 같은 경우 우리가 정해진 form에 입력해서 확인 버튼을 누른다. 
+- 확인 버튼을 누르면 form에 맞추어 적힌 것을 쿼리파라미터 형식으로 바뀌는데 이를 메시지 바디에 실어 보내는 것이 POST 방식
+![img_9.png](img_9.png)
+#### HTTP message body에 데이터를 직접 담아서 요청
+- REST API에서 주로 사용. JSON, XML, TEXT
+- 데이터 형식은 주로 JSON을 사용한다.
+- POST, PUT, PATCH
 
 
+### HTTP 요청 데이터 GET 쿼리 파라미터
+- 쿼리 파라미터는 URL에 다음과 같이 ?를 시작으로 보낼 수 있다. 추가 파라미터는 &로 구분된다.
+- http://localhost:8080/request-param?username=hello&age=20
+- 다음은 쿼리파라미터 조회
+```java
+package hello.servlet.basic.request;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/*
+1. 파라미터 전송 기능
+ */
+
+@WebServlet(name = "requestParamServlet", urlPatterns = "/request-param")
+public class RequestParamServlet extends HttpServlet {
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        System.out.println("[전체 파라미터 조회] - start");
+        request.getParameterNames().asIterator().forEachRemaining(paramName -> System.out.println(paramName + "=" + request.getParameter(paramName)));
+
+        System.out.println("[전체 파라미터 조회] - end");
+        System.out.println();
+
+        System.out.println("[단일 파라미터 조회] - start");
+        String username = request.getParameter("username"); //키값넣어서 해당키에 해당하는 값 잡아온다. 단일 조회!
+        String age = request.getParameter("age"); //키값넣어서 해당키에 해당하는 값 잡아온다. 단일 조회!
+
+        System.out.println("username = " + username);
+        System.out.println("age = " + age);
+        System.out.println("[단일 파라미터 조회] - end");
+
+        //?username=hello&username=hello2 이런 경우가 있다
+        //이럴 경우 단일 조회하면 앞쪽에 있는 게 걸려 넘어옴 뒤에 있는 것도 보고 싶다면 이름이 같은 복수 파라미터 조회!
+        System.out.println("[이름이 같은 복수 파라미터 조회] - start");
+        String[] usernames = request.getParameterValues("username"); //getParameterValues -> 얘는 배열 반환! for each로 찍어볼 수 있다.
+        for (String name : usernames) {
+            System.out.println("name = " + name);
+        }
+
+        System.out.println("[이름이 같은 복수 파라미터 조회] - end");
+
+    }
+}
+
+```
+
+- 복수 파라미터에서 단일 파라미터 조회
+- 위의 주석에도 써있지만 이름은 하나인데 값이 중복일 수 있다. 이럴 경우에는 getParameter가 아닌 getParameterValues를 사용해야 함
+- getParameter를 사용하면 맨 앞에 걸려있는 것 하나만 가져온다.
+- 근데 참고로 이렇게 중복으로 설계하는 경우는 많지 않기에 실상 가장 많이 사용되는 것은 getParameter라고 볼 수 있음
+- getParameter는 키값을 넘겨주면 value(우리가 원하는 데이터)를 가져온다! 
+
+### HTTP 요청 데이터 - POST HTML Form
+- content-type: application/x-www-form-urlencoded
+  - GET방식과는 다르게 content-type이 필요 -> 메시지 바디가 있기 때문
+- 메시지 바디에 쿼리 파라미터 형식으로 데이터를 전달한다! 
+- html form 에 입력한 것이 쿼리형태로 주조되어 메시지 바디에 써진 후에 전송되는 것!  (입력한 정보가 메시지 바디에 쓰인 후에 전송된다)
+- 서블릿에서 꺼낼때는 위의 GET방식의 데이터를 꺼낼때와 구분없이 꺼낼 수 있다. 쿼리 파라미터 조회 메서드를 그대로 사용한다.
+- cf) html을 굳이 만들어서 테스트 할 필요없이 postman 사용할 수 있다.
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<!-- 전송 버튼이 눌리면 입력된 것을 포스트 방식의 메시지로 주조하여(message body에 쿼리를 쓴다) /request-param url로 요청한다!
+     꺼낼 때는 똑같이 request.getParameter로 꺼낼 수 있다. -->
+<form action="/request-param" method="post"> 
+    username: <input type="text" name="username" />
+    age: <input type="text" name="age" />
+    <button type="submit">전송</button>
+</form>
+</body>
+</html>
+```
+
+### HTTP message body에 데이터를 직접 담아서 요청
+- HTTP API에서 주로 사용하는 방식임 
+- 데이터 형식은 주로 JSON을 사용한다
 
 </div>
 </details>
