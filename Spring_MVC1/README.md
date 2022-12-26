@@ -620,3 +620,150 @@ public class ResponseJsonServlet extends HttpServlet {
 
 </div>
 </details>
+
+<details>
+<summary>02 서블릿, JSP, MVC 패턴  </summary>
+<div markdown="1">
+
+### 회원 관리 웹 어플리케이션 요구사항
+
+- 회원 정보
+```java
+package hello.servlet.domain.member;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class Member {
+
+    private Long id;
+    private String username;
+    private int age;
+
+    public Member() {
+    }
+
+    public Member(String username, int age) {
+        this.username = username;
+        this.age = age;
+    }
+}
+
+```
+- 회원 저장소
+```java
+package hello.servlet.domain.member;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class MemberRepository {
+    //동시성 문제가 고려되어 있지 않음, 실무에서는 ConcurrentHashMap, AtomicLong을 고려해야함
+    private static Map<Long, Member> store = new HashMap<>();
+    private static long sequence = 0L;
+
+    private static final MemberRepository instance = new MemberRepository();
+
+    public static MemberRepository getInstance() {
+        return instance;
+    }
+    private MemberRepository() {
+    }
+
+    public Member save(Member member) {
+        member.setId(++sequence);
+        store.put(member.getId(), member);
+        return member;
+    }
+
+    public Member findById(Long id) {
+        return store.get(id);
+    }
+    public List<Member> findAll() {
+        return new ArrayList<>(store.values());
+    }
+    public void clearStore() {
+        store.clear();
+    }
+}
+
+```
+
+### 서블릿으로 회원 관리 웹 애플리케이션 만들기
+
+- 각 url 요청에 대응하는 서블릿을 만들어 보았다. (save, members 등등..)
+- 다음은 그 중 하나인 회원 저장 
+```java
+package hello.servlet.web.servlet;
+
+import hello.servlet.domain.member.Member;
+import hello.servlet.domain.member.MemberRepository;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+@WebServlet(name = "memberSaveServlet", urlPatterns = "/servlet/members/save")
+public class MemberSaveServlet extends HttpServlet {
+
+  private MemberRepository memberRepository = MemberRepository.getInstance();
+
+  @Override
+  protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    System.out.println("MemberSaveServlet.service");
+    String username = request.getParameter("username"); //Form방식이든 GET의 쿼리파라미터든 꺼낼 수 있다.
+    int age = Integer.parseInt(request.getParameter("age"));
+
+    Member member = new Member(username, age);
+    memberRepository.save(member);
+
+    response.setContentType("text/html");
+    response.setCharacterEncoding("utf-8");
+    PrintWriter w = response.getWriter();
+    //동적 html이라 볼 수 있다.
+    w.write("<html>\n" +
+            "<head>\n" +
+            " <meta charset=\"UTF-8\">\n" +
+            "</head>\n" +
+            "<body>\n" +
+            "성공\n" +
+            "<ul>\n" +
+            " <li>id="+member.getId()+"</li>\n" +
+            " <li>username="+member.getUsername()+"</li>\n" +
+            " <li>age="+member.getAge()+"</li>\n" +
+            "</ul>\n" +
+            "<a href=\"/index.html\">메인</a>\n" +
+            "</body>\n" +
+            "</html>");
+  }
+}
+
+ 
+```
+- url 요청이 들어왔을 때 req를 파싱하고 response를 동적 html로써 보내는 것을 확인할 수 있음
+
+### 템플릿 엔진으로..
+- 지금까지 서블릿과 자바 코드만으로 HTML을 만들어 봄
+- 원하는 HTML을 동적으로 만들어 response를 줄 수 있지만 write로 일일이 쓰는 것은 매우 비효율적
+- 자바 코드 안에 HTML을 넣는 것보다 HTML에 자바 코드를 넣는 것이 더욱 편리할 것
+- 이것이 템플릿 엔진의 등장 배경
+- 템플릿 엔진을 사용하면 HTML 문서에서 필요한 곳만 코드를 적용해서 동적으로 변경 가능하다.
+- 템플릿 엔진에는 JSP, Thymeleaf, Freemarker 등등이 있다
+- JSP로 동일한 작업을 해볼 것이지만 JSP는 거의 사장되어 가는 추세고 Thymeleaf가 스프링과 잘 통합되기에 자주 사용되는 템플릿 엔진이라는 점을 기억하자
+- Server Side Rendering!! 
+
+
+
+
+
+
+</div>
+</details>
