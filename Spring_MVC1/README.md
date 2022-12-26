@@ -758,7 +758,45 @@ public class MemberSaveServlet extends HttpServlet {
 - 템플릿 엔진을 사용하면 HTML 문서에서 필요한 곳만 코드를 적용해서 동적으로 변경 가능하다.
 - 템플릿 엔진에는 JSP, Thymeleaf, Freemarker 등등이 있다
 - JSP로 동일한 작업을 해볼 것이지만 JSP는 거의 사장되어 가는 추세고 Thymeleaf가 스프링과 잘 통합되기에 자주 사용되는 템플릿 엔진이라는 점을 기억하자
-- Server Side Rendering!! 
+
+### JSP
+- jsp를 사용하려면 gradle을 통해 라이브러리를 추가해야 한다. 강의 노트를 참고
+- 회원 저장을 JSP로 구현해보자 다음과 같이 html파일과 java코드를 한 파일에 섞는다.
+```html
+<%@ page import="hello.servlet.domain.member.MemberRepository" %>
+<%@ page import="hello.servlet.domain.member.Member" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%
+     // request, response 사용 가능
+     MemberRepository memberRepository = MemberRepository.getInstance();
+     System.out.println("save.jsp");
+     String username = request.getParameter("username");
+     int age = Integer.parseInt(request.getParameter("age"));
+     Member member = new Member(username, age);
+     System.out.println("member = " + member);
+     memberRepository.save(member);
+%>
+<html>
+<head>
+ <meta charset="UTF-8">
+</head>
+<body>
+성공
+<ul>
+ <li>id=<%=member.getId()%></li>
+ <li>username=<%=member.getUsername()%></li>
+ <li>age=<%=member.getAge()%></li>
+</ul>
+<a href="/index.html">메인</a>
+</body>
+</html>
+```
+- 서블릿으로 개발할 때는 뷰화면을 위한 HTML을 만드는 작업이 자바 코드에 섞여서 지저분하고 복잡했지만 JSP를 사용한 덕분에 뷰를 생성하는 HTML작업을 깔끔히 가져가고 중간중간 동적으로 변경이 필요한 부분은 자바 코드를 적용할 수 있었다.
+- 다만 이렇게 하면 JAVA 코드, HTML 등등 다양한 코드가 모두 jsp로써 노출되는데 이는 유지보수의 어려움이 있다
+- 이에 등장한 것이 MVC 패턴 
+  - 비즈니스 로직은 서블릿 처럼 다른 곳에서 처리, JSP는 목적에 맞게 HTML로 화면을 그리는 일에 집중
+- 서블릿(자바 코드 복잡) -> jsp(유지보수 힘듬) -> MVC로 넘어오게 된 것 
+
 
 
 
