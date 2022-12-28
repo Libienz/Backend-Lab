@@ -822,6 +822,65 @@ public class MemberSaveServlet extends HttpServlet {
   - 그래서 일반적으로 비즈니스 로직은 서비스라는 계층을 별도로 만들어서 처리
   - 그리고 컨트롤러는 비즈니스 로직이 있는 서비스를 호출하는 역할을 담당
 
+### MVC 패턴 적용
+
+- 서블릿을 컨트롤러로 사용하고 jsp를 뷰로 사용해서 mvc를 적용
+- model은 HttpServletRequest객체를 사용한다. (얘 내부에 저장소가 있음 object타입으로)
+- mvc패턴 적용한 예 중 회원 등록 부분만 살펴보자
+
+```java
+package hello.servlet.web.servlet.servletmvc;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+//Controller역할
+@WebServlet(name = "mvcMemberFormServlet", urlPatterns ="/servlet-mvc/members/new-form" )
+public class MvcMemberFormServlet extends HttpServlet {
+
+    //Controller로 요청이 들어오면 jsp로 넘어가준다.
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String viewPath = "/WEB-INF/views/new-form.jsp";
+        RequestDispatcher dispatcher = request.getRequestDispatcher(viewPath);//경로 이동
+        //redirect는 다시 요청을 받고 처리하는 반면(URL 바뀜) dispatcher는 서버안에서 내부적으로 바꿔치기(URL 바뀌지 않음)
+        dispatcher.forward(request, response); //jsp로 전환
+    }
+}
+
+```
+- dispatcher.forward(): 다른 서블릿이나 jsp로 이동할 수 있는 기능
+  - redirect는 실제 클라이언트에 응답이 나갔다가 클라이언트가 redirect경로로 다시 요청
+  - forward는 서버 내부에서 일어나는 호출이기에 클라이언트가 전혀 인지하지 못함! 
+
+```html
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+<head>
+ <meta charset="UTF-8">
+ <title>Title</title>
+</head>
+<body>
+<!-- 상대경로 사용, [현재 URL이 속한 계층 경로 + /save] -->
+<form action="save" method="post">
+ username: <input type="text" name="username" />
+ age: <input type="text" name="age" />
+ <button type="submit">전송</button>
+</form>
+</body>
+</html>
+```
+- /WEB-INF
+  - 해당 경로안의 jsp는 외부에서 직접 호출할 수 없음 (url로 찍어서 요청 못한다는 것) 
+  - 이렇게 만든 이유는 항상 컨트롤러를 통해서 jsp가 호출되기 바라기 때문 (MVC)
+
+- MVC 덕분에 컨트롤러 로직과 뷰 로직을 확실하게 분리한 것을 확인할 수 있다. 
+- 만약 이후에 화면 수정이 필요하다면 뷰 로직만 변경하면 됨 
 
 
 
