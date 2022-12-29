@@ -907,12 +907,149 @@ dispatcher.forward(request, response);
   - 수문장 역할을 하는 애들이 공통 처리를 한다
   - 스프링 MVC의 핵심도 이 프론트 컨트롤러이다! 
 
+</div>
+</details>
+
+<details>
+<summary>03 MVC 프레임워크 만들기 </summary>
+<div markdown="1">
+
+### 프론트 컨트롤러 패턴 소개
+
+- 프론트 컨트롤러 도입 전
+
+![img.png](img_12.png)
+
+- 프론트 컨트롤러 도입 후
+
+![img.png](img_13.png)
+
+### frontController 패턴 특징
+- 프론트 컨트롤러 서블릿 하나로 클라이언트의 요청을 받음
+- 프론트 컨트롤러가 요청에 맞는 컨트롤러를 찾아서 호출
+- 입구를 하나로 만드는 것이 핵심
+- 공통 처리가 가능하다.
+- 프론트 컨트롤러를 제외한 나머지 컨트롤러는 서블릿을 사용하지 않아도 됨
+- 스프링 웹 MVC의 핵심도 바로 Front Controller
+- 스프링 웹 MVC의 DispatcherServlet이 FrontController 패턴으로 구현되어 있음
+
+### 프론트 컨트롤러 도입 - v1 
+
+![img_14.png](img_14.png)
+
+- 컨트롤러 인터페이스를 도입
+- 각 컨트롤러들은 이 인터페이스를 구현하면 됨
+- 프론트 컨트롤러는 이 인터페이스를 호출해서 구현과 관계없이 로직의 일관성을 가져갈 수 있음
+
+```java
+package hello.servlet.web.frontcontroller.v1;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+public interface ControllerV1 {
+
+    //throws 호출하는 쪽으로 예외를 던짐
+    //throw 예외를 발생시킴
+    void process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException;
+}
+
+```
+
+- 인터페이스를 구현하는 여러 컨트롤러들을 만들어보자
+- 여기에선 회원 등록 컨트롤러만 예로 보이겠음
+- 회원 등록 컨트롤러
+
+```java
+package hello.servlet.web.frontcontroller.v1.controller;
+
+import hello.servlet.web.frontcontroller.v1.ControllerV1;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+public class MemberFormControllerV1 implements ControllerV1 {
+
+    @Override
+    public void process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String viewPath = "/WEB-INF/views/new-form.jsp";
+        RequestDispatcher dispatcher = request.getRequestDispatcher(viewPath);//경로 이동
+        //redirect는 다시 요청을 받고 처리하는 반면(URL 바뀜) dispatcher는 서버안에서 내부적으로 바꿔치기(URL 바뀌지 않음)
+        dispatcher.forward(request, response); //jsp로 전환
+    }
+}
+
+```
+
+- front Controller를 살펴보자
+
+```java
+package hello.servlet.web.frontcontroller.v1;
+
+import hello.servlet.web.frontcontroller.v1.controller.MemberFormControllerV1;
+import hello.servlet.web.frontcontroller.v1.controller.MemberListControllerV1;
+import hello.servlet.web.frontcontroller.v1.controller.MemberSaveControllerV1;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+//v1/와일드 string 어떤게 들어와도 처리한다.
+@WebServlet(name = "frontControllerServletV1", urlPatterns = "/front-controller/v1/*")
+public class FrontControllerServletV1 extends HttpServlet {
+
+    private Map<String, ControllerV1> controllerMap = new HashMap<>();
+
+    public FrontControllerServletV1() {
+        controllerMap.put("/front-controller/v1/members/new-form", new MemberFormControllerV1());
+        controllerMap.put("/front-controller/v1/members/save", new MemberSaveControllerV1());
+        controllerMap.put("/front-controller/v1/members", new MemberListControllerV1());
+    }
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        System.out.println("FrontControllerServletV1.service");
+        String requestURI = request.getRequestURI();
+        ControllerV1 controller = controllerMap.get(requestURI);
+        if (controller == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        controller.process(request, response);
+    }
+}
+
+```
+
+### 프론트 컨트롤러 분석
+
+- urlPatterns 
+  - '*'을 사용하여 하위 모든 요청을 프론트 컨트롤러에서 받아들이도록 설계했다.
+- service()
+  - 먼저 requestURI를 조회해서 실제 호출할 컨트롤러를 Map에서 찾는다. 만약 없다면 상태코드를 404로 설정하여 response한다.
+- 이로써 프론트 컨트롤러에서 공통처리를 진행하고 다형성을 이용하여 맞는 서비스 로직을 불러와 요청을 처리하는 것을 볼 수 있음 
 
 
 
 
+</div>
+</details>
 
 
+<details>
+<summary>04 Spring MVC 구조 이해 </summary>
+<div markdown="1">
 
 
 </div>
