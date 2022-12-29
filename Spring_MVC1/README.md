@@ -1130,6 +1130,200 @@ public class FrontControllerServletV2 extends HttpServlet {
 - 컨트롤러에게서 myView를 반환받고 view에서 render를 진행하는 것을 알 수 있음 ! 
 - 공통 부분을 frontController로 뺌으로써 refactoring 한 것 
 
+### Model 추가 - v3
+
+- 서블릿 종속성 제거
+  - 컨트롤러 입장에서 HttpServletRequest, HttpServletResponse가 꼭 필요할까?
+  - 요청 파라미터 정보는 자바의 Map으로 넘기도록 하면 지금 구조에서는 컨트롤러가 서블릿 기술을 몰라도 동작할 수 있다.
+  - 아래의 코드를 보자
+- 기존 v2 의 컨트롤러
+```java
+
+public class MemberFormControllerV2 implements ControllerV2 {
+
+    @Override
+    public MyView process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        return new MyView("/WEB-INF/views/new-form.jsp");
+    }
+}
+
+```
+- Controller가 request, response를 알아야 함 (http servlet)
+- v3에서 요청 파라미터를 자바의 map으로 바꿧을 때 
+```java
+public class MemberFormControllerV3 implements ControllerV3 {
+
+  @Override
+  public ModelView process(Map<String, String> paramMap) {
+    return new ModelView("new-form");
+  }
+} 
+```
+- 서블릿을 몰라도 되는 것을 확인 가능 
+- request 객체를 Model로 사용하는 대신에 별도의 Model 객체를 만들어 반환하는데 이것 또한 서블릿 기술의 종속성을 제거
+- 이렇게 구현하면 코드도 단순해지고 테스트 코드 작성이 쉽다.
+
+- 뷰 이름 중복 제거
+  - 컨트롤러는 뷰의 논리 이름을 반환 실제 물리 위치의 이름은 프론트 컨트롤러에서 resolver를 통해 처리하도록 단순화
+  - 이렇게 하면 향후 뷰의 폴더 위치가 함께 이동해도 프론트 컨트롤러만 고치면 된다. 
+- V3 구조
+
+![img_16.png](img_16.png)
+
+- ModelView
+  - 지금까지 컨트롤러에서 서블릿에 종속적인 HttpServletRequest를 사용했다.
+  - 그리고 모델도 request의 내부 공간을 사용하여 데이터를 저장하고 뷰에 전달했음 (req.setAttribute())
+  - 서블릿의 종속성을 제거하기 위해 Model을 직접 만들고, 추가로 View 이름까지 전달하는 객체를 만든다.
+```java
+package hello.servlet.web.frontcontroller;
+
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Getter @Setter
+public class ModelView {
+  //view의 논리적 이름을 제공함으로써 viewPath가 변경되더라도 유연한 대처 가능
+  //한부분만 고치면 된다!
+  private String viewName; //뷰의 논리적 이름
+  private Map<String, Object> model = new HashMap<>();
+
+  public ModelView(String viewName) {
+    this.viewName = viewName;
+  }
+}
+
+```
+- 뷰의 이름과 뷰를 렌더링할 때 필요한 model 객체를 가지고 있다. model은 단순히 map으로 되어 있음
+- 컨트롤러에서 뷰에 필요한 데이터를 key, value로 넣어주면 된다.
+
+
+- ControllerV3
+```java
+package hello.servlet.web.frontcontroller.v3;
+
+import hello.servlet.web.frontcontroller.ModelView;
+
+import java.util.Map;
+
+public interface ControllerV3 {
+
+  ModelView process(Map<String, String> paramMap);
+}
+ 
+```
+- 이 컨트롤러는 서블릿 기술을 전혀 사용하지 않음
+- 따라서 구현이 매우 단순해지고, 테스트 코드 작성시 테스트 하기 쉬움
+- HttpRequest가 제공하는 파라미터는 프론트 컨트롤러가 paramMap에 담아서 호출해줌
+- 응답 결과로 뷰 이름과 뷰에 전달할 Model데이터를 포함하는 ModelView 객체를 반환하면 된다.
+
+- MemberSaveControllerV3
+```java
+package hello.servlet.web.frontcontroller.v3.controller;
+
+import hello.servlet.domain.member.Member;
+import hello.servlet.domain.member.MemberRepository;
+import hello.servlet.web.frontcontroller.ModelView;
+import hello.servlet.web.frontcontroller.v3.ControllerV3;
+
+import java.util.Map;
+
+public class MemberSaveControllerV3 implements ControllerV3 {
+
+  private MemberRepository memberRepository = MemberRepository.getInstance();
+  @Override
+  public ModelView process(Map<String, String> paramMap) {
+    String username = paramMap.get("username");
+    int age = Integer.parseInt(paramMap.get("age"));
+
+    Member member = new Member(username, age);
+    memberRepository.save(member);
+
+    ModelView mv = new ModelView("save-result");
+    mv.getModel().put("member", member);
+    return mv;
+
+  }
+}
+
+```
+- 파라미터 정보는 map에 담겨 있음
+- map에서 필요한 요청 파라미터를 조회하면 된다.
+- 모델은 단순한 map이므로 모델에 뷰에서 필요한 member객체를 담고 반환한다.
+
+- FrontControllerServletV3
+```java
+package hello.servlet.web.frontcontroller.v3;
+
+import hello.servlet.web.frontcontroller.ModelView;
+import hello.servlet.web.frontcontroller.MyView;
+import hello.servlet.web.frontcontroller.v3.controller.MemberFormControllerV3;
+import hello.servlet.web.frontcontroller.v3.controller.MemberListControllerV3;
+import hello.servlet.web.frontcontroller.v3.controller.MemberSaveControllerV3;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+
+
+//v3/와일드 string 어떤게 들어와도 처리한다.
+@WebServlet(name = "frontControllerServletV3", urlPatterns = "/front-controller/v3/*")
+public class FrontControllerServletV3 extends HttpServlet {
+
+  private Map<String, ControllerV3> controllerMap = new HashMap<>();
+
+  public FrontControllerServletV3() {
+    controllerMap.put("/front-controller/v3/members/new-form", new MemberFormControllerV3());
+    controllerMap.put("/front-controller/v3/members/save", new MemberSaveControllerV3());
+    controllerMap.put("/front-controller/v3/members", new MemberListControllerV3());
+  }
+
+  @Override
+  protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    System.out.println("FrontControllerServletV3.service");
+    String requestURI = request.getRequestURI();
+    ControllerV3 controller = controllerMap.get(requestURI);
+    if (controller == null) {
+      response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+      return;
+    }
+
+    //paramMap
+    Map<String, String> paramMap = createParamMap(request);
+    ModelView mv = controller.process(paramMap);
+    String viewName = mv.getViewName(); //논리 이름 뿐임 .. resolve 필요
+    MyView view = viewResolver(viewName); //resolve!
+
+    view.render(mv.getModel(), request, response);
+
+  }
+
+  private static MyView viewResolver(String viewName) {
+    return new MyView("/WEB-INF/views/" + viewName + ".jsp");
+  }
+
+  private static Map<String, String> createParamMap(HttpServletRequest request) {
+
+    Map<String, String> paramMap = new HashMap<>();
+    //getParameterNames는 파라미터의 이름들을 enumeration으로 가져온다
+    //?username=이근희 이렇게 넘어오면 username이 저장되는 것
+    //이거를 asIterator로 돌리고 Iterator의 forEachRemaining에 람다식을 넘기는 것 
+    //남은게 있고 exception이 걸리지 않는 동안 iterator가 돈다. 
+    request.getParameterNames().asIterator().forEachRemaining(paramName -> paramMap.put(paramName, request.getParameter(paramName)));
+    return paramMap;
+  }
+}
+ 
+```
+
 </div>
 </details>
 
