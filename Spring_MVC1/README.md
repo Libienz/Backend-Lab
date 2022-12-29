@@ -1040,8 +1040,95 @@ public class FrontControllerServletV1 extends HttpServlet {
   - 먼저 requestURI를 조회해서 실제 호출할 컨트롤러를 Map에서 찾는다. 만약 없다면 상태코드를 404로 설정하여 response한다.
 - 이로써 프론트 컨트롤러에서 공통처리를 진행하고 다형성을 이용하여 맞는 서비스 로직을 불러와 요청을 처리하는 것을 볼 수 있음 
 
+### View 분리 - v2
 
+- 모든 컨트롤러에서 뷰로 이동하는 부분에 중복이 있고, 깔끔하지 않다
+```java
+String viewPath = "/WEB-INF/views/new-form.jsp";
+RequestDispatcher dispatcher = request.getRequestDispatcher(viewPath);
+dispatcher.forward(request, response); 
+```
+- 중복이 있는 dispatch -> forward 부분을 frontController에 몰것임 
 
+![img_15.png](img_15.png)
+
+- 이제 프론트 컨트롤러에서 mapping해서 불러진 controller는 MyView를 만들어서 반환 
+- 프론트 컨트롤러에서 myView.render()를 실행한다.
+
+- 컨트롤러V2 예시 MemberFormControllerV2
+```java
+package hello.servlet.web.frontcontroller.v2.controller;
+
+import hello.servlet.web.frontcontroller.MyView;
+import hello.servlet.web.frontcontroller.v2.ControllerV2;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+public class MemberFormControllerV2 implements ControllerV2 {
+
+  @Override
+  public MyView process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    return new MyView("/WEB-INF/views/new-form.jsp");
+  }
+}
+ 
+```
+
+- V2 FrontController
+
+```java
+package hello.servlet.web.frontcontroller.v2;
+
+;
+import hello.servlet.web.frontcontroller.MyView;
+import hello.servlet.web.frontcontroller.v2.controller.MemberFormControllerV2;
+import hello.servlet.web.frontcontroller.v2.controller.MemberListControllerV2;
+import hello.servlet.web.frontcontroller.v2.controller.MemberSaveControllerV2;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+//v1/와일드 string 어떤게 들어와도 처리한다.
+@WebServlet(name = "frontControllerServletV2", urlPatterns = "/front-controller/v2/*")
+public class FrontControllerServletV2 extends HttpServlet {
+
+    private Map<String, ControllerV2> controllerMap = new HashMap<>();
+
+    public FrontControllerServletV2() {
+        controllerMap.put("/front-controller/v2/members/new-form", new MemberFormControllerV2());
+        controllerMap.put("/front-controller/v2/members/save", new MemberSaveControllerV2());
+        controllerMap.put("/front-controller/v2/members", new MemberListControllerV2());
+    }
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        System.out.println("FrontControllerServletV2.service");
+        String requestURI = request.getRequestURI();
+        ControllerV2 controller = controllerMap.get(requestURI);
+        if (controller == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        MyView view = controller.process(request, response);
+        view.render(request, response);
+
+    }
+}
+
+```
+
+- 컨트롤러에게서 myView를 반환받고 view에서 render를 진행하는 것을 알 수 있음 ! 
+- 공통 부분을 frontController로 뺌으로써 refactoring 한 것 
 
 </div>
 </details>
