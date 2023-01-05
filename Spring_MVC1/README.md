@@ -1474,8 +1474,209 @@ public class FrontControllerServletV4 extends HttpServlet {
   - 컨트롤러를 구현하는 개발자 입장에서 편해짐
   - 점진적으로 발전했다! 
 
+ControllerV5
+- 이제 V5에서는 다양한 종류의 컨트롤러를 처리할 수 있는 유연한 프론트 컨트롤러를 개발한다.
+- 즉, 어떤 것은 V3로 처리하고 싶고 어떤 것은 V4로 처리하고 싶을 때 둘 다 가능하도록 어댑터 패턴을 적용하는 것이다.
+  - ControllerV3와 V4는 서로 다른 인터페이스임으로 공통적으로 사용할 수 없다.
+- V5 구조
+
+![img_18.png](img_18.png)
+
+- 핸들러 어댑터 
+  - 중간에 어댑터 역할을 하는 어댑터가 추가 됨
+  - 프론트 컨트롤러에 어댑터가 있기에 다양한 종류의 컨트롤러를 호환시켜 호출할 수 있음
+- 핸들러
+  - 컨트롤러의 이름을 더 넓은 범위인 핸들러로 변경한 것 
 
 
+- MyHandlerAdapter
+
+```java
+package hello.servlet.web.frontcontroller.v5;
+
+import hello.servlet.web.frontcontroller.ModelView;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+public interface MyHandlerAdapter {
+
+    boolean supports(Object handler); //컨트롤러가 넘어왔을 때 핸들러를 지원할 수 있는지
+    ModelView handle(HttpServletRequest request, HttpServletResponse response, Object handler) throws ServletException, IOException; //컨트롤러 호출
+}
+
+```
+
+- supports : handler가 넘어가면 어댑터가 해당 컨트롤러를 처리할 수 있는지 판단 
+- handle: 어댑터가 실제 컨트롤런를 호출, 그 결과로 ModelView를 반환 
+  - 후에 mv를 반환하지 않는 v4컨트롤러도 mv를 반환하도록 설정하면 되는 것임
+  - 이전에는 프론트 컨트롤러가 실제 컨트롤러를 호출했지만 이제는 어댑터를 통해서 실제 컨트롤러가 호출된다.
+
+
+- 실제 어댑터 구현
+- ControllerV3HandlerAdapter
+
+```java
+package hello.servlet.web.frontcontroller.v5.adapter;
+
+import hello.servlet.web.frontcontroller.ModelView;
+import hello.servlet.web.frontcontroller.v3.ControllerV3;
+import hello.servlet.web.frontcontroller.v5.MyHandlerAdapter;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+public class ControllerV3HandlerAdapter implements MyHandlerAdapter {
+
+    @Override
+    public boolean supports(Object handler) {
+        return (handler instanceof ControllerV3); //ControllerV3의 인스턴스가 넘어오면 true 아니면 false
+
+    }
+
+    @Override
+    public ModelView handle(HttpServletRequest request, HttpServletResponse response, Object handler) throws ServletException, IOException {
+        ControllerV3 controllerV3 = (ControllerV3) handler;
+
+        Map<String, String> paramMap = createParamMap(request);
+        ModelView mv = controllerV3.process(paramMap);
+
+        return mv;
+    }
+
+    private static Map<String, String> createParamMap(HttpServletRequest request) {
+
+        Map<String, String> paramMap = new HashMap<>();
+
+        //getParameterNames는 파라미터의 이름들을 enumeration으로 가져온다
+        //?username=이근희 이렇게 넘어오면 username이 저장되는 것
+        //이거를 asIterator로 돌리고 Iterator의 forEachRemaining에 람다식을 넘기는 것
+        request.getParameterNames().asIterator().forEachRemaining(paramName -> paramMap.put(paramName, request.getParameter(paramName)));
+        return paramMap;
+    }
+}
+
+```
+
+- FrontController
+
+```java
+package hello.servlet.web.frontcontroller.v5;
+
+import hello.servlet.web.frontcontroller.ModelView;
+import hello.servlet.web.frontcontroller.MyView;
+import hello.servlet.web.frontcontroller.v3.ControllerV3;
+import hello.servlet.web.frontcontroller.v3.controller.MemberFormControllerV3;
+import hello.servlet.web.frontcontroller.v3.controller.MemberListControllerV3;
+import hello.servlet.web.frontcontroller.v3.controller.MemberSaveControllerV3;
+import hello.servlet.web.frontcontroller.v4.ControllerV4;
+import hello.servlet.web.frontcontroller.v4.controller.MemberFormControllerV4;
+import hello.servlet.web.frontcontroller.v4.controller.MemberListControllerV4;
+import hello.servlet.web.frontcontroller.v4.controller.MemberSaveControllerV4;
+import hello.servlet.web.frontcontroller.v5.adapter.ControllerV3HandlerAdapter;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@WebServlet(name = "frontControllerServletV5", urlPatterns = "/front-controller/v5/*")
+public class FrontControllerServletV5 extends HttpServlet {
+
+    private final Map<String, Object> handlerMappingMap = new HashMap<>(); //이제는 object타입으로 모든 컨트롤러를 다 지원하도록 하였다 V5의 핵심
+    private final List<MyHandlerAdapter> handlerAdapters = new ArrayList<>();
+
+    public FrontControllerServletV5() {
+        initHandlerMappingMap();
+        initHandlerAdapters();
+    }
+
+    private void initHandlerAdapters() {
+        handlerAdapters.add(new ControllerV3HandlerAdapter());
+    }
+
+    private void initHandlerMappingMap() {
+        handlerMappingMap.put("/front-controller/v5/v3/members/new-form", new MemberFormControllerV3());
+        handlerMappingMap.put("/front-controller/v5/v3/members/save", new MemberSaveControllerV3());
+        handlerMappingMap.put("/front-controller/v5/v3/members", new MemberListControllerV3());
+    }
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        //핸들러 찾아와
+        Object handler = getHandler(request);
+
+        //핸들러 없으면 NOT_FOUND response
+        if (handler == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        //찾아온 핸들러의 어댑터 찾아와
+        //handler 던져서 맞는 어댑터 찾아온다.
+        MyHandlerAdapter adapter = getHandlerAdapter(handler);
+
+        //adapter로 하여금 핸들 실행 -> 이제 무조건 mv 반환
+        ModelView mv = adapter.handle(request, response, handler);
+
+        String viewName = mv.getViewName(); //논리 이름 뿐임 .. resolve 필요
+        MyView view = viewResolver(viewName); //resolve!
+
+        view.render(mv.getModel(), request, response);
+
+    }
+
+
+    private static MyView viewResolver(String viewName) {
+        return new MyView("/WEB-INF/views/" + viewName + ".jsp");
+    }
+
+    private MyHandlerAdapter getHandlerAdapter(Object handler) {
+        for (MyHandlerAdapter adapter : handlerAdapters) {
+            if (adapter.supports(handler)) {
+                return adapter;
+            }
+        }
+        throw new IllegalArgumentException("handler adapter를 찾을 수 없습니다.");
+    }
+
+    private Object getHandler(HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        Object handler = handlerMappingMap.get(requestURI);
+        return handler;
+    }
+}
+
+```
+- 컨트롤러 -> 핸들러
+  - 이전에는 컨트롤러를 직접 매핑해서 사용했다. 그런데 이제는 어댑터를 사용하기 때문에, 컨트롤러 뿐만 아니라 어댑터가 지원하기만 하면, 어떤 것이라도 URL에 매핑하여 사용할 수 있다.
+
+- 전반적인 과정을 살펴보자
+  - 프론트 컨트롤러에서 들어온 요청 URI에 따라 handler를 가져온다. 
+    - 다만 모든 종류의 컨트롤러를 설정할 수 있어야 하기에 이전과 다르게 Object type을 value로 가지는 맵으로 바뀐 것을 확인 가능
+  - handler를 가져오면 handler에 맞는 어댑터가 있는지 확인한다. 
+    - supports 메소드를 이용 adapter 중에서 현재 내가 선택한 handler를 지원하는 어댑터를 찾는다.
+  - 어댑터를 찾았다면 어댑터의 handle을 호출 
+    - 이게 실제 컨트롤러 로직을 호출하는 부분임
+  - 우리는 어댑터에서 무조건 mv를 반환하도록 설정했기에 어댑터의 handle 결과로 mv를 받게 된다.
+  - mv를 resolve하고 render해서 응답
+
+
+- 아직까지는 V3 컨트롤러를 사용할 수 있는 어댑터와 V3만 들어 있어서 어댑터 패턴의 장점이 드러나지 않음 
+- 이어지는 과정에서 ControllerV4가 들어와도 mv를 반환하도록 하는 어댑터를 구현해볼 것 
 
 </div>
 </details>
