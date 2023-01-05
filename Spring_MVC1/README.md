@@ -1677,7 +1677,88 @@ public class FrontControllerServletV5 extends HttpServlet {
 
 - 아직까지는 V3 컨트롤러를 사용할 수 있는 어댑터와 V3만 들어 있어서 어댑터 패턴의 장점이 드러나지 않음 
 - 이어지는 과정에서 ControllerV4가 들어와도 mv를 반환하도록 하는 어댑터를 구현해볼 것 
+- FrontControllerServletV5에 ControllerV4도 handle할 수 있는 adapter를 넣어보자
+```java
 
+private void initHandlerMappingMap() {
+        handlerMappingMap.put("/front-controller/v5/v3/members/new-form", new MemberFormControllerV3());
+        handlerMappingMap.put("/front-controller/v5/v3/members/save", new MemberSaveControllerV3());
+        handlerMappingMap.put("/front-controller/v5/v3/members", new MemberListControllerV3());
+
+        //V4 추가
+        //실제로는 url마다 처리하는 컨트롤러가 다르도록 설정하겠지
+        handlerMappingMap.put("/front-controller/v5/v4/members/new-form", new MemberFormControllerV4());
+        handlerMappingMap.put("/front-controller/v5/v4/members/save", new MemberSaveControllerV4());
+        handlerMappingMap.put("/front-controller/v5/v4/members", new MemberListControllerV4());
+} 
+```
+- ControllerV4를 다룰 수 있는 Adapter도 추가해보자
+  - 어댑터 패턴으로써 V3가 들어오든 V4가 들어오든 일관적인 방식으로 처리가 가능해짐
+```java
+package hello.servlet.web.frontcontroller.v5.adapter;
+
+import hello.servlet.web.frontcontroller.ModelView;
+import hello.servlet.web.frontcontroller.v3.ControllerV3;
+import hello.servlet.web.frontcontroller.v4.ControllerV4;
+import hello.servlet.web.frontcontroller.v5.MyHandlerAdapter;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+public class ControllerV4HandlerAdapter implements MyHandlerAdapter {
+  @Override
+  public boolean supports(Object handler) {
+    return (handler instanceof ControllerV4); //ControllerV4의 인스턴스가 넘어오면 true 아니면 false
+
+  }
+
+  @Override
+  public ModelView handle(HttpServletRequest request, HttpServletResponse response, Object handler) throws ServletException, IOException {
+    ControllerV4 controller = (ControllerV4) handler;
+
+    Map<String, String> paramMap = createParamMap(request);
+    Map<String, Object> model = new HashMap<>();
+    String viewName = controller.process(paramMap, model);
+    //v4도한 mv를 반환하도록 어댑터에서 설정된 모습을 확인 가능
+    ModelView mv = new ModelView(viewName);
+    mv.setModel(model);
+    return mv;
+  }
+
+  private static Map<String, String> createParamMap(HttpServletRequest request) {
+
+    Map<String, String> paramMap = new HashMap<>();
+
+    //getParameterNames는 파라미터의 이름들을 enumeration으로 가져온다
+    //?username=이근희 이렇게 넘어오면 username이 저장되는 것
+    //이거를 asIterator로 돌리고 Iterator의 forEachRemaining에 람다식을 넘기는 것
+    request.getParameterNames().asIterator().forEachRemaining(paramName -> paramMap.put(paramName, request.getParameter(paramName)));
+    return paramMap;
+  }
+}
+
+```
+
+- 지금까지 v1~v5까지 점진적으로 우리의 프레임워크를 발전시켜옴
+- v1: 프론트 컨트롤러를 도입
+  - 프론트 컨트롤러에서 서블릿의 공통적인 부분을 처리하도록 했음
+- v2: View 분리
+  - 프론트 컨트롤러에 view를 처리하는 부분을 넣음으로써 단순 반복되는 로직을 뽑아냄
+  - view와 로직을 분리함으로써 하나가 너무 많은 책임을 가지지 않도록 했ㅇ므
+- v3: Model 추가
+  - 서블릿 종속성을 제거
+  - 뷰 이름 중복을 제거 
+- v4: 단순하고 실용적인 컨트롤러
+  - viewResolver라는 작은 개념을 통해 ModelView를 직접 생성해서 반환할 필요 없이 만들었음 (String viewName만 반환)
+  - 인터페이스와 구현체가 훨씬 단순해짐 (크게 바꾸지 않고 작은 아이디어를 통해서)
+- v5: 어댑터 패턴을 통한 유연한 컨트롤러 도입
+  - 어댑터를 도입해서 여러 버전의 컨트롤러를 일관적으로 handling할 수 있도록 함 
+
+여기에 애노테이션을 사용해서 컨트롤러를 더 편리하게 발전시킬 수도 있지만 이는 진행해보지 않음 스프링 프레임워크에서 만나볼 것
 </div>
 </details>
 
