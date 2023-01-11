@@ -1767,6 +1767,26 @@ public class ControllerV4HandlerAdapter implements MyHandlerAdapter {
 <summary>04 Spring MVC 구조 이해 </summary>
 <div markdown="1">
 
+### 스프링 MVC 전체 구조
+- 직접 만든 MVC 프레임워크와 스프링 MVC를 비교해 보자
 
+직접 만든 MVC 프레임워크 구조
+
+![img_19.png](img_19.png)
+
+SpringMVC 구조
+
+![img_20.png](img_20.png)
+
+- 이름만 바뀌었을 뿐 똑같다
+- 스프링 MVC의 동작 순서를 보자
+  - 핸들러 조회: 핸들러 매핑을 통해 URL에 매핑된 핸들러(컨트롤러)를 조회한다.
+  - 핸들러 어댑터 조회: 핸들러를 실행할 수 있는 핸들러 어댑터를 조회한다. 
+    - 어떤 핸들러가 넘어와도 원하는 방식대로 일관적으로 처리할 수 있는 어댑터 패턴
+  - 핸들러 실행: 핸들러 어앱터가 실제 핸들러를 실행한다.
+  - ModelAndView 반환: 핸들러 어댑터는 핸들러가 반환하는 정보를 ModelAndView로 변환해서 반환한다.
+  - ViewResolver 호출: 뷰 리졸버를 찾고 실행한다.
+  - View 반환: 뷰 리졸버는 뷰의 논리 이름을 물리 이름으로 바꾸고, 렌더링 역할을 담당하는 뷰 객체를 반환한다.
+  - 뷰 렌더링: 뷰를 통해서 뷰를 렌더링 한다. 
 </div>
 </details>
