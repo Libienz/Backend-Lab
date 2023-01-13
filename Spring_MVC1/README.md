@@ -44,14 +44,14 @@
 - HTML Form 데이터 전송으로 POST 요청이 발생했고 그것을 서버가 처리해야 한다고 생각해보자
 - 서버에서 처리해야 하는 일은 엄청 많아 .. 
 
-![img.png](img.png)
+![img.png](screenshots/img.png)
 
 - 하지만 우리가 핵심적으로 하고 싶은 일은 초록색 박스
 - 서블릿은 여기에서 우리가 의미 있는 비즈니스 로직에 집중할 수 있도록 나머지 일들을 처리해주는 역할을 한다 (Marshalling unmarshalling 등등)
 - 즉 요청 정보를 편리하게 사용할 수 있도록 하고 응답 정보를 편리하게 만들 수 있도록 도와 줌
 - HTTP 스펙을 사용하기가 매우 편리해짐 
 
-![img_1.png](img_1.png)
+![img_1.png](screenshots/img_1.png)
 
 ### 서블릿 컨테이너
 
@@ -74,7 +74,7 @@
 
 ### 하드웨어 스레드와 소프트웨어 스레드의 차이
 
-![img_2.png](img_2.png)
+![img_2.png](screenshots/img_2.png)
 
 - 소프트웨어 스레드가 100개 있다고 하더라도 동시에 실행될 수 있는 스레드는 하드웨어 스레드 갯수와 같다. 
 - 물리적 스레드가 2코어 4스레드라고 한다면 동시에 네개의 스레드가 실행 가능하다.
@@ -99,7 +99,7 @@
 
 ### 쓰레드 풀
 
-![img_3.png](img_3.png)
+![img_3.png](screenshots/img_3.png)
 
 - 쓰레드 풀 : 요청 마다 쓰레드를 생성하는 것의 단점을 보완한다.
   - 특징 
@@ -141,7 +141,7 @@
 - 동적으로 필요한 HTML 파일을 생성해서 전달하는 방식
 - 웹 브라우저는 HTML을 해석한다.
 
-![img_4.png](img_4.png)
+![img_4.png](screenshots/img_4.png)
 
 - WAS가 HTML파일을 렌더링하여 반환 
 
@@ -169,18 +169,18 @@
   - HTTP API와 REST API는 사실 거의 같은 의미로 사용하고 있다
 - RESTful 하게 설계하는 것은 두가지 중심 규칙을 기반으로
 
-![img_5.png](img_5.png)
+![img_5.png](screenshots/img_5.png)
 
 
 ### SSR - 서버 사이드 렌더링
 
 - 서버에서 최종 HTML을 생성해서 클라이언트에 전달
 
-![img_6.png](img_6.png)
+![img_6.png](screenshots/img_6.png)
 
 ### CSR - 클라이언트 사이드 렌더링
 
-![img_7.png](img_7.png)
+![img_7.png](screenshots/img_7.png)
 
 </div>
 </details>
@@ -248,7 +248,7 @@ public class HelloServlet extends HttpServlet {
   - urlPatterns : URL 매핑 
   - HTTP 요청을 통해 매핑된 URL이 호출되면서 서블릿 컨테이너는 service 메소드 실행
   
-![img_8.png](img_8.png)
+![img_8.png](screenshots/img_8.png)
 
 ### Http Servlet Request Handling
 - Http 요청 메시지를 개발자가 직접 파싱해서 사용해도 되지만, 매우 불편.
@@ -271,7 +271,7 @@ public class HelloServlet extends HttpServlet {
 - 예) 회원 가입, 상품 주문, HTML Form 사용
 - 회원가입 같은 경우 우리가 정해진 form에 입력해서 확인 버튼을 누른다. 
 - 확인 버튼을 누르면 form에 맞추어 적힌 것을 쿼리파라미터 형식으로 바뀌는데 이를 메시지 바디에 실어 보내는 것이 POST 방식
-![img_9.png](img_9.png)
+![img_9.png](screenshots/img_9.png)
 #### HTTP message body에 데이터를 직접 담아서 요청
 - REST API에서 주로 사용. JSON, XML, TEXT
 - 데이터 형식은 주로 JSON을 사용한다.
@@ -815,8 +815,8 @@ public class MemberSaveServlet extends HttpServlet {
   - 뷰에 출력할 데이터를 담아둔다. 뷰가 필요한 데이터를 모두 모델에 담아서 전달해주는 덕분에 뷰는 비즈니스 로직이나 데이터 접근을 몰라도 됨
 - View
   - 모델에 담겨있는 데이터를 사용해서 화면을 그리는 일에 집중 
-![img_10.png](img_10.png)
-![img_11.png](img_11.png)
+![img_10.png](screenshots/img_10.png)
+![img_11.png](screenshots/img_11.png)
 - 참고 
   - 컨트롤러에 비즈니스 로직을 둘 수도 있지만 이렇게 되면 컨트롤러가 너무 많은 역할을 담당
   - 그래서 일반적으로 비즈니스 로직은 서비스라는 계층을 별도로 만들어서 처리
@@ -918,11 +918,11 @@ dispatcher.forward(request, response);
 
 - 프론트 컨트롤러 도입 전
 
-![img.png](img_12.png)
+![img.png](screenshots/img_12.png)
 
 - 프론트 컨트롤러 도입 후
 
-![img.png](img_13.png)
+![img.png](screenshots/img_13.png)
 
 ### frontController 패턴 특징
 - 프론트 컨트롤러 서블릿 하나로 클라이언트의 요청을 받음
@@ -935,7 +935,7 @@ dispatcher.forward(request, response);
 
 ### 프론트 컨트롤러 도입 - v1 
 
-![img_14.png](img_14.png)
+![img_14.png](screenshots/img_14.png)
 
 - 컨트롤러 인터페이스를 도입
 - 각 컨트롤러들은 이 인터페이스를 구현하면 됨
@@ -1050,7 +1050,7 @@ dispatcher.forward(request, response);
 ```
 - 중복이 있는 dispatch -> forward 부분을 frontController에 몰것임 
 
-![img_15.png](img_15.png)
+![img_15.png](screenshots/img_15.png)
 
 - 이제 프론트 컨트롤러에서 mapping해서 불러진 controller는 MyView를 만들어서 반환 
 - 프론트 컨트롤러에서 myView.render()를 실행한다.
@@ -1168,7 +1168,7 @@ public class MemberFormControllerV3 implements ControllerV3 {
   - 이렇게 하면 향후 뷰의 폴더 위치가 함께 이동해도 프론트 컨트롤러만 고치면 된다. 
 - V3 구조
 
-![img_16.png](img_16.png)
+![img_16.png](screenshots/img_16.png)
 
 - ModelView
   - 지금까지 컨트롤러에서 서블릿에 종속적인 HttpServletRequest를 사용했다.
@@ -1329,7 +1329,7 @@ public class FrontControllerServletV3 extends HttpServlet {
 - 다만 실제 컨트롤러 인터페이스를 구현하는 개발자 입장에서 보면, 항상 ModelView객체를 생성하고 반환해야 하는 부분은 번거롭다
 - 개발자가 단순하고 편리하게 사용할 수 있는 실용성을 갖춘 컨트롤러를 구현해보자
 - v4 구조
-![img_17.png](img_17.png)
+![img_17.png](screenshots/img_17.png)
 - 기본 구조는 V3와 같지만 Controller가 String viewName만을 반환
 - 그렇다면 Model은 어디에? Controller를 호출할때 입력인자로 넘긴 model! 
   - parmaMap을 전달: 요청사항 정리해서 준다
@@ -1480,7 +1480,7 @@ ControllerV5
   - ControllerV3와 V4는 서로 다른 인터페이스임으로 공통적으로 사용할 수 없다.
 - V5 구조
 
-![img_18.png](img_18.png)
+![img_18.png](screenshots/img_18.png)
 
 - 핸들러 어댑터 
   - 중간에 어댑터 역할을 하는 어댑터가 추가 됨
@@ -1772,11 +1772,11 @@ public class ControllerV4HandlerAdapter implements MyHandlerAdapter {
 
 직접 만든 MVC 프레임워크 구조
 
-![img_19.png](img_19.png)
+![img_19.png](screenshots/img_19.png)
 
 SpringMVC 구조
 
-![img_20.png](img_20.png)
+![img_20.png](screenshots/img_20.png)
 
 - 이름만 바뀌었을 뿐 똑같다
 - 스프링 MVC의 동작 순서를 보자
