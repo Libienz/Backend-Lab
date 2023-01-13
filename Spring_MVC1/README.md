@@ -1788,5 +1788,176 @@ SpringMVC 구조
   - ViewResolver 호출: 뷰 리졸버를 찾고 실행한다.
   - View 반환: 뷰 리졸버는 뷰의 논리 이름을 물리 이름으로 바꾸고, 렌더링 역할을 담당하는 뷰 객체를 반환한다.
   - 뷰 렌더링: 뷰를 통해서 뷰를 렌더링 한다. 
+
+### 스프링 MVC 시작하기 
+
+- 스프링이 제공하는 컨트롤러는 애노테이션 기반으로 동작 -> 매우 유연하고 실용적
+- @RequestMapping 애노테이션을 사용하는 컨트롤러
+  - 실무에서 거의 대부분 이 방식의 컨트롤러를 사용한다
+- SpringMemberControllerV1
+
+```java
+package hello.servlet.web.springmvc.v1;
+
+import hello.servlet.domain.member.Member;
+import hello.servlet.domain.member.MemberRepository;
+import hello.servlet.web.frontcontroller.ModelView;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
+
+@Controller
+public class SpringMemberSaveControllerV1 {
+
+    private MemberRepository memberRepository = MemberRepository.getInstance();
+
+    @RequestMapping("/springmvc/v1/members/save")
+    public ModelAndView process(HttpServletRequest request, HttpServletResponse response) {
+        String username = request.getParameter("username");
+        int age = Integer.parseInt(request.getParameter("age"));
+
+        Member member = new Member(username, age);
+        memberRepository.save(member);
+
+        ModelAndView mv = new ModelAndView("save-result");
+        mv.addObject("member", member);
+        return mv;
+    }
+}
+
+```
+
+- @Controller
+  - 스프링이 자동으로 스프링 빈으로 등록한다. (Component 스캔의 대상이 된다)
+  - 스프링 MVC에서 애노테이션 기반 컨트롤러로 인식한다.
+- @RequestMapping 
+  - 요청 정보를 매핑한다. 해당 URL이 호출되면 이 메서드가 호출됨 
+  - 애노테이션을 기반으로 동작하기에 메서드 이름은 임의로 지으면 된다.
+- RequestMappingHandlerMapping은 스프링 빈 중에서 @RequestMapping 또는 @Controller가 클래스 레벨에 붙어 있는 경우 매핑 정보로 인식한다.
+  - Handler로써 관리하고 핸들러를 매핑할 수 있도록 추가하는 듯  
+
+### 스프링 MVC - 컨트롤러 통합
+- RequestMapping을 잘 보면 클래스 단위가 아니라 메서드 단위에 적용된 것을 확인 가능
+  - 사실 이 부분이 헷갈리는데 우리가 만든 servlet은 mapping정보를 url, controller로 매핑해서 url 요청이 들어오면 컨트롤러를 던져줌
+  - 다만 스프링에서는 메서드 단위의 매핑이 가능한 듯. 스프링은 프레임워크고 이런 저런 코드를 많이 줄여주는 것 같다
+  - 컨트롤러로써 처리해주는 부분이 있겠지
+- SpringMemberControllerV2
+```java
+package hello.servlet.web.springmvc.v2;
+
+import hello.servlet.domain.member.Member;
+import hello.servlet.domain.member.MemberRepository;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.List;
+
+@Controller
+@RequestMapping("/springmvc/v2/members")
+public class SpringMemberControllerV2 {
+
+  private MemberRepository memberRepository = MemberRepository.getInstance();
+
+  @RequestMapping("/new-form")
+  public ModelAndView newForm() {
+    return new ModelAndView("new-form");
+  }
+  @RequestMapping("/save")
+  public ModelAndView save(HttpServletRequest request, HttpServletResponse response) {
+    String username = request.getParameter("username");
+    int age = Integer.parseInt(request.getParameter("age"));
+
+    Member member = new Member(username, age);
+    memberRepository.save(member);
+
+    ModelAndView mv = new ModelAndView("save-result");
+    mv.addObject("member", member);
+    return mv;
+  }
+  //더하는게 없으면 그냥 위에 클래스단의 매핑정보
+  @RequestMapping
+  public ModelAndView members() {
+    List<Member> members = memberRepository.findAll();
+    ModelAndView mv = new ModelAndView("members");
+    mv.addObject("members", members);
+    return mv;
+  }
+}
+ 
+```
+- 하나의 컨트롤러에 여러 메서드를 조합 가능
+- 클래스 레벨에 @RequestMapping("주소1") 한 후에 메소드 단위에 @RequestMapping("주소2")로 매핑 했다고 치자
+- 그렇다면 주소1/주소2 요청이 들어왔을 때 해당 메소드가 요청된다.
+- 클래스 레벨과 메서드 레벨의 주소가 조합 가능!
+
+### 스프링 MVC - 실용적인 방식
+- ModelView를 반환않고 String으로 논리주소만 반환하자! 
+- 실무에서 이렇게 한다
+- SpringMemberControllerV3
+
+```java
+package hello.servlet.web.springmvc.v3;
+
+import hello.servlet.domain.member.Member;
+import hello.servlet.domain.member.MemberRepository;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@Controller
+@RequestMapping("springmvc/v3/members")
+public class SpringMemberControllerV3 {
+
+    private MemberRepository memberRepository = MemberRepository.getInstance();
+
+    @GetMapping("/new-form")
+    public String newForm() {
+        return "new-form";
+    }
+
+    @PostMapping("/save")
+    public String save(@RequestParam("username") String username,
+                       @RequestParam("age") int age,
+                       Model model) {
+
+        Member member = new Member(username, age);
+        memberRepository.save(member);
+
+        model.addAttribute("member", member);
+        return "save-result";
+    }
+
+    //더하는게 없으면 그냥 위에 클래스단의 매핑정보
+    @GetMapping
+    public String members(Model model) {
+        List<Member> members = memberRepository.findAll();
+        model.addAttribute("members", members);
+        return "members";
+    }
+}
+
+```
+- 파라미터를 @RequestParam을 사용함으로써 받는 것을 볼 수 있음 
+- @GetMapping, @PostMapping으로 @RequestMapping(method = GET)등을 대체 하는 것을 볼 수 있음
+
+
+
+</div>
+</details>
+
+
+<details>
+<summary>05 Spring MVC 기본 기능 </summary>
+<div markdown="1">
+
 </div>
 </details>
