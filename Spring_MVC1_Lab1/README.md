@@ -282,6 +282,56 @@ public class MappingClassController {
 - 매핑 방법을 이해했으니 이제부터 HTTP 요청이 보내는 데이터들을 스프링 MVC로 어떻게 조회하는지 알아보자
 
 ## HTTP 요청 - 기본, 헤더 조회
+- 애노테이션 기반의 스프링 컨트롤러는 다양한 파라미터를 지원한다.
+- 이번 시간에는 HTTP 헤더 정보를 조회하는 방법을 알아보자
+
+### RequestHeaderController
+```java
+package hello.springmvc.basic.request;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpMethod;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Locale;
+
+@Slf4j
+@RestController
+public class RequestHeaderController {
+
+  //스프링 애노테이션 기반 컨트롤러는 다양한 파라미터를 지원한다.
+  @RequestMapping("/headers")
+  public String headers(HttpServletRequest request,
+                        HttpServletResponse response,
+                        HttpMethod httpMethod, //GET, POST, DELETE 등등
+                        Locale locale, //언어 정보
+                        @RequestHeader MultiValueMap<String,String> headerMap, //헤더를 한번에 다 받는다. 맵에
+                        @RequestHeader("host") String host, //헤더 하나만 가져오는
+                        @CookieValue(value = "myCookie", required = false) String cookie) { //required의 디폴트는 true -> false로 하면 없어도 된다.
+
+    log.info("request={}", request);
+    log.info("response={}", response);
+    log.info("httpMethod={}", httpMethod);
+    log.info("locale={}", locale);
+    log.info("headerMap={}", headerMap);
+    log.info("header host={}", host);
+    log.info("myCookie={}", cookie);
+    return "ok";
+  }
+}
+
+```
+- 참고 MultiValueMap
+  - Map과 유사한데, 하나의 키에 여러 값을 받을 수 있다.
+  - HTTP header, HTTP 쿼리 파라미터와 같이 하나의 키에 여러 값을 받을 때 사용한다.
+  - get하면 배열을 반환
+  - key 하나에 매핑된 여러 value를 조회 가능  
 
 
 </div>
