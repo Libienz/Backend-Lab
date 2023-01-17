@@ -228,8 +228,61 @@ public class MappingController {
     }
 }
 
-
 ```
+
+## 요청 매핑 -API 예시
+- 회원 관리를 HTTP API로 만든다 생각하고 매핑을 어떻게 하는지 알아보자
+```java
+package hello.springmvc.basic.requestmapping;
+
+import org.springframework.web.bind.annotation.*;
+
+/**
+ * 회원 목록 조회: GET /users
+ * 회원 등록: POST /users
+ * 회원 조회: GET /users/{userId}
+ * 회원 수정: PATCH /users/{userId}
+ * 회원 삭제: DELETE /users/{userId}
+ */
+@RequestMapping("/mapping/users") //리소스 계층화
+@RestController
+public class MappingClassController {
+
+  public String user() {
+    return "get users";
+  }
+
+  public String addUser() {
+    return "post user";
+  }
+
+  @GetMapping("/{userId}")
+  public String findUser(@PathVariable String userId) {
+    return "get userId=" + userId;
+  }
+
+  @PatchMapping("/{userId}")
+  public String update(@PathVariable String userId) {
+    return "update userId=" + userId;
+  }
+
+  @DeleteMapping("/{userId}")
+  public String deleteUser(@PathVariable String userId) {
+    return "delete userId=" + userId;
+  }
+
+
+}
+ 
+```
+
+- 같은 url name도 http메서드에 따라 다르게 매핑되는 것을 확인 가능
+- 클래스레벨 url과 메서드 레벨 url을 통해 자원의 계층화 가능 
+- 보기 쉽고 쓰기 쉽다 
+- 매핑 방법을 이해했으니 이제부터 HTTP 요청이 보내는 데이터들을 스프링 MVC로 어떻게 조회하는지 알아보자
+
+## HTTP 요청 - 기본, 헤더 조회
+
 
 </div>
 </details>
