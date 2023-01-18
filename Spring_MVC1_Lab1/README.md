@@ -332,7 +332,7 @@ public class RequestHeaderController {
   - HTTP header, HTTP 쿼리 파라미터와 같이 하나의 키에 여러 값을 받을 때 사용한다.
   - get하면 배열을 반환
   - key 하나에 매핑된 여러 value를 조회 가능  
-
+ 
 
 </div>
 </details>
