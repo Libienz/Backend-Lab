@@ -361,27 +361,120 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Slf4j
 @Controller
 public class RequestParamController {
 
-    @RequestMapping("/request-param-v1")
-    public void requestParamV1(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String username = request.getParameter("username");
-        int age = Integer.parseInt(request.getParameter("age"));
-        log.info("username={}, age={}", username, age);
+  @RequestMapping("/request-param-v1")
+  public void requestParamV1(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    String username = request.getParameter("username");
+    int age = Integer.parseInt(request.getParameter("age"));
+    log.info("username={}, age={}", username, age);
 
-        response.getWriter().write("ok");
+    response.getWriter().write("ok");
 
-    }
+  }
+
+  //응답 메시지에 바로 때려 넣는 ResponseBody -> view 조회를 하지 않는다.
+  @ResponseBody
+  @RequestMapping("/request-param-v2")
+  public String requestParamV2(
+          @RequestParam("username") String memberName,
+          @RequestParam("age") int memberAge) {
+    log.info("username={}, age={}", memberName, memberAge);
+    return "ok";
+
+  }
+
+
+  //내가 사용하고자 하는 변수명이 쿼리 파라미터의 변수명과 같다면 위에서 일정 부분 생략 가능
+  //축약된 버전 v2 -> v3
+  @ResponseBody
+  @RequestMapping("/request-param-v3")
+  public String requestParamV3(
+          @RequestParam String username,
+          @RequestParam int age) {
+    log.info("username={}, age={}", username, age);
+    return "ok";
+
+  }
+  //근데 사실 아래 v4처럼 다 없앨 수도 있음 ㅋㅋ
+  //요청 파라미터 이름과 나의 변수명이 일치하면
+  @ResponseBody
+  @RequestMapping("/request-param-v4")
+  public String requestParamV4(String username, int age) {
+    log.info("username={}, age={}", username, age);
+    return "ok";
+  }
+
+  //required는 default값이 true -> requestParam이 무조건 있어야 한다.
+  //false -> 해당 requestParam이 없어도 된다.
+  @ResponseBody
+  @RequestMapping("/request-param-required")
+  public String requestParamRequired(
+          @RequestParam(required = true) String username,
+          @RequestParam(required = false) Integer age) {
+
+    log.info("username={}, age={}", username, age);
+    return "ok";
+  }
+
+  @ResponseBody
+  @RequestMapping("/request-param-default")
+  public String requestParamDefault(
+          //사실 default val 들어가면 required는 무의미
+          @RequestParam(required = true, defaultValue = "guest") String username,
+          @RequestParam(required = false,defaultValue = "-1") int age) {
+
+    log.info("username={}, age={}", username, age);
+    return "ok";
+  }
+
+  @ResponseBody
+  @RequestMapping("/request-param-map")
+  public String requestParamMap(@RequestParam Map<String, Object> paramMap) {
+
+    log.info("username={}, age={}", paramMap.get("username"), paramMap.get("age"));
+    return "ok";
+  }
+
 }
 
 ```
-- Get 쿼리 파라미터 요청이든 HTML form 요청이든 구분없이 처리하는 것을 확인할 수 있다(servlet)
+- V1
+  - Get 쿼리 파라미터 요청이든 HTML form 요청이든 구분없이 처리하는 것을 확인할 수 있다(servlet)
+- V2
+  - 애노테이션이용 축약된 형태로 파라미터를 뽑을 수 있는 것을 확인할 수 있음 
+    - 실제로 request.getParameter코드를 품고 있다.
+- V3
+  - v2를 축약시킨 버전. 요청 파라미터 이름과 변수이름이 일치한다면 생략할 수 있다 
+- V4
+  - v3에서 아예 더 축약시킬 수 있다. 
+    - 하지만 너무 단순한 게 과하다는 생각도 있는 듯
+    - @RequestParam이 있는 것이 오히려 변수가 요청 파라미터 정보라는 것을 명확히 알려주기에 좋다고 생각하는 사람도 있다
+- requestParamRequired
+  - @RequestParam()안에 required를 설정함으로써 해당 요청 파라미터를 필수 또는 필수가 아닌 요소로 설정할 수 있음
+  - 디폴트는 true -> 필수
+  - 필수 파라미터가 요청데이터에 포함되지 않으면 서버는 Bad Request로 응답한다
+    - 주의 : 기본형에 null은 들어갈 수 없다
+    - int age 에는 null을 입력할 수 없음 age가 필수 값이 아니기에 null을 지정할 수 있어야 함 
+    - Integer로 변경하거나 defaultValue를 사용해야 함
+- requestParamDefault
+  - required는 여기에선 이제 더이상 필요없음 써도 안먹히기도 하고
+  - 기본값으로 퉁치고 들어간다. 
+- requestParmaMap
+  - 파라미터들을 맵으로 받고 조회할 수 있다.
+  - MultiValueMap을 사용할 수도 있지만 파라미터의 값이 1개가 확실하다면 Map을 사용해도 된다.
+    - 참고로 같은 키값을 가지는 파라미터를 쓰는 경우는 흔치 않다
+
 
 </div>
 </details>
