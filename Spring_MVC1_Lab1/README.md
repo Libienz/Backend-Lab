@@ -474,7 +474,7 @@ public class RequestParamController {
   - 파라미터들을 맵으로 받고 조회할 수 있다.
   - MultiValueMap을 사용할 수도 있지만 파라미터의 값이 1개가 확실하다면 Map을 사용해도 된다.
     - 참고로 같은 키값을 가지는 파라미터를 쓰는 경우는 흔치 않다
-
+ 
 
 </div>
 </details>
