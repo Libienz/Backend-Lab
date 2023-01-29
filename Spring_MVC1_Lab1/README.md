@@ -607,8 +607,7 @@ public class RequestBodyStringController {
     responseWriter.write("ok");
 
   }
-
-  //인풋 스트림과 writer를 바로 받을 수 있다. -> v2
+  
   @PostMapping("/request-body-string-v3")
   public HttpEntity<String> requestBodyStringV3(HttpEntity<String> httpEntity) throws IOException {
 
