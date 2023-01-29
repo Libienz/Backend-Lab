@@ -475,6 +475,82 @@ public class RequestParamController {
   - MultiValueMap을 사용할 수도 있지만 파라미터의 값이 1개가 확실하다면 Map을 사용해도 된다.
     - 참고로 같은 키값을 가지는 파라미터를 쓰는 경우는 흔치 않다
  
+### Http 요청 파라미터 - @ModelAttribute 
+
+- 실제 개발을 하면 요청 파라미터를 받아서 필요한 객체를 만들고 그 객체에 값을 넣어주어야 한다.
+- 보통 다음과 같이 코드를 작성할 것이다.
+
+```java
+    @ResponseBody
+    @RequestMapping("/model-attribute-v1")
+    public String modelAttributeV1(@RequestParam String username, @RequestParam int age) {
+        HelloData helloData = new HelloData();
+        helloData.setUsername(username);
+        helloData.setAge(age);
+        log.info("username={}, age={}", helloData.getUsername(), helloData.getAge());
+        return "ok";
+    }
+
+```
+
+- 스프링은 이 과정을 완전히 자동화해주는 @ModelAttribute 기능을 제공
+- 먼저 요청 파라미터를 바인딩 받을 객체를 살펴보자
+
+```java
+package hello.springmvc.basic;
+
+import lombok.Data;
+
+@Data
+public class HelloData {
+    private String username;
+    private int age;
+}
+
+```
+- 롬복의 @Data
+  - @Getter, @Setter, @ToString, @EqualsAndHashCode, @RequiredArgsConstructor를 자동으로 적용해준다
+
+- 모델 애트리뷰트가 적용된 코드를 보자
+
+```java
+    @ResponseBody
+    @RequestMapping("/model-attribute-v1")
+    public String modelAttributeV1(@ModelAttribute HelloData helloData) {
+//        HelloData helloData = new HelloData();
+//        helloData.setUsername(username);
+//        helloData.setAge(age);
+        log.info("username={}, age={}", helloData.getUsername(), helloData.getAge());
+        return "ok";
+    }
+```
+- 동작하는 과정을 살펴보면 HelloData객체가 생성되고 요청 파라미터의 값이 주입되어 있는것을 확인할 수 있다.
+- 즉, 자동으로 요청파라미터의 값을 읽어와서 우리가 넘긴 helloData에 값을 전부 주입하였다는 것인데 어떻게 이런 것이 가능할까?
+- 스프링 MVC는 @ModelAttribute가 있으면 다음을 실행한다.
+  - HelloData 객체를 생성
+  - 요청 파라미터의 이름으로 HelloData 객체의 프로퍼티를 찾는다.
+  - 해당 프로퍼티의 Setter를 호출해서 파라미터의 값을 바인딩한다. 
+  - 예로 파라미터의 이름이 username이면 setUsername() 메서드를 찾아서 호출, 값을 입력하는 것이다
+- 바인딩 오류
+  - age=abc 처럼 숫자가 들어가야 할 곳에 문자를 넣으면 BindException이 발생, 이런 바인딩 오류를 처리하는 부분은 뒤의 검증 부분에서 다룬다
+
+
+- 모델 애트리뷰트는 다음처럼 생략 가능하다 V2
+```java
+    //축약 버전 V2
+@ResponseBody
+@RequestMapping("/model-attribute-v2")
+public String modelAttributeV2(HelloData helloData) {
+//        HelloData helloData = new HelloData();
+//        helloData.setUsername(username);
+//        helloData.setAge(age);
+        log.info("username={}, age={}", helloData.getUsername(), helloData.getAge());
+        return "ok";
+        } 
+```
+- 그런데 @RequestParam도 생략 가능하다고 했는데 스프링은 어떻게 resolve하는 것일까?
+  - String, int, Integer 같은 단순 타입 = @RequestParam
+  - 나머지는 Model로써 해석한다.
 
 </div>
 </details>
