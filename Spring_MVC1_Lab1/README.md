@@ -642,6 +642,116 @@ public class RequestBodyStringController {
   - @ResponseBody를 사용하면 응답 결과를 HTTP 메시지 바디에 직접 말아서 전달 가능하다
   - 이 경우에도 view를 resolve 하지 않음
 
+## HTTP 요청 메시지 - JSON
+- 이번에는 HTTP API에서 주로 사용하는 JSON 데이터 형식을 조회해보자
+- JSON이란!?
+  - 데이터 포맷일 뿐 
+  - 단순히 데이터를 표시하는 표현 방법일 뿐이다.
+  - 서버와 클라이언트 간의 교류에서 일반적으로 사용되며 특정 언어에 종속되지 않고, 대부분의 언어에서 JSON 포맷의 데이터를 핸들링 할 수 있는 라이브러리를 제공한다.
+
+```java
+package hello.springmvc.basic.request;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hello.springmvc.basic.HelloData;
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.util.StreamUtils;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+/**
+ * {"username":"hello", "age":20}
+ * content-type: application/json
+ */
+@Slf4j
+@Controller
+public class RequestBodyJsonController {
+
+    private ObjectMapper objectMapper = new ObjectMapper();
+
+    @PostMapping("/request-body-json-v1")
+    public void requestBodyJsonV1(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        ServletInputStream inputStream = request.getInputStream();
+        String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+
+        log.info("msgBody={}", messageBody);
+        HelloData helloData = objectMapper.readValue(messageBody, HelloData.class);
+        log.info("username={}, age={}", helloData.getUsername(), helloData.getAge());
+
+        response.getWriter().write("ok");
+
+    }
+
+
+    @ResponseBody
+    @PostMapping("/request-body-json-v2")
+    public String requestBodyJsonV2(@RequestBody String messageBody) throws IOException {
+
+        log.info("msgBody={}", messageBody);
+        HelloData helloData = objectMapper.readValue(messageBody, HelloData.class);
+        log.info("username={}, age={}", helloData.getUsername(), helloData.getAge());
+
+        return "ok";
+    }
+
+
+    //objectMapper사용안하고 바로 HelloData넘겨주면 거기에 받을 수 있다. -> V3
+    //마찬가지로 위의 코드를 자동화한 것과 마찬가지다
+    //httpMessageConverter가 동작 -> ObjectMapping을 실시한다.
+    @ResponseBody
+    @PostMapping("/request-body-json-v3")
+    public String requestBodyJsonV3(@RequestBody HelloData helloData) {
+
+        log.info("username={}, age={}", helloData.getUsername(), helloData.getAge());
+
+        return "ok";
+    }
+
+    @ResponseBody
+    @PostMapping("/request-body-json-v4")
+    public String requestBodyJsonV4(HttpEntity<HelloData> httpEntity) {
+
+        HelloData data = httpEntity.getBody();
+        log.info("username={}, age={}", data.getUsername(), data.getAge());
+        return "ok";
+    }
+
+
+    //httpMessageConverter는 들어올 때도 적용이 되지만 반환할 때에도 적용된다.
+    //즉 RequestBody할 때에도 변환해서 객체에 욱여넣고 response가 객체라면 convert해서 반홚나다.
+    //json이 객체로 변환되어 data로 들어가고 -> 객체를 return하면 객체가 json으로 변환되어 반환된다.
+    @ResponseBody
+    @PostMapping("/request-body-json-v5")
+    public HelloData requestBodyJsonV5(@RequestBody HelloData data) {
+
+        log.info("username={}, age={}", data.getUsername(), data.getAge());
+        return data;
+    }
+
+}
+
+```
+- v3를 살펴보면 v2에서 objectMapper를 사용하여 매핑하는 과정을 자동화해주는 스프링 기능을 확인할 수 있다. 
+- HttpEntity, @RequestBody를 사용하면 HTTP 메시지 컨버터가 HTTP 메시지 바디의 내용을 우리가 원하는 문자나 객체 등으로 변환
+- HTTP 메시지 컨버터는 문자 뿐만 아니라 JSON도 객체로 변환해줌
+- v5를 살펴보면 @RequestBody로 요청 메시지 바디를 객체로 받아올 때 HTTP메시지 컨버터가 동작하는 것과 함께 response에 객체를 말아주어도 HTTP메시지 컨버터가 동작하는 것을 확인할 수 있다.
+  - @RequestBody 요청
+    - JSON 요청 -> HTTP 메시지 컨버터 -> 객체
+  - @ResponseBody 응답
+    - 객체 -> HTTP 메시지 컨버터 -> JSON 응답
+
+
+
 
 </div>
 </details>
