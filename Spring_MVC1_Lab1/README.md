@@ -552,5 +552,97 @@ public String modelAttributeV2(HelloData helloData) {
   - String, int, Integer 같은 단순 타입 = @RequestParam
   - 나머지는 Model로써 해석한다.
 
+## HTTP 요청 메시지 - 단순 텍스트
+
+- Http message body에 데티어를 직접 담아서 요청
+  - HTTP API에서 주로 사용, JSON, XML, TEXT
+  - 데이터 형식은 주로 JSON 사용
+  - POST, PUT, PATCH
+- 요청 파라미터와 다르게, HTTP 메시지 바디를 통해서 데이터가 직접 넘어오는 경우는 @RequestParam, @ModelAttribute를 사용할 수 없다.
+- 물론 HTML Form 형식으로 전달되는 경우는 요청 파라미터로 인정된다.
+- 먼저 가장 단순한 텍스트 메시지를 HTTP 메시지 바디에 담아서 전송하고 읽어보자
+- HTTP 메시지 바디의 데이터를 InputStream을 사용해서 직접 읽을 수 있다.
+
+```java
+package hello.springmvc.basic.request;
+
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.util.StreamUtils;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+
+@Slf4j
+@Controller
+public class RequestBodyStringController {
+
+  @PostMapping("/request-body-string-v1")
+  public void requestBodyString(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    ServletInputStream inputStream = request.getInputStream();
+    //inputStream은 바이트 코드이기에 UTF_8로 인코딩해서 copyToString한다
+    String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+
+    log.info("messageBody={}", messageBody);
+    response.getWriter().write("ok");
+
+  }
+
+  //인풋 스트림과 writer를 바로 받을 수 있다. -> v2
+  @PostMapping("/request-body-string-v2")
+  public void requestBodyStringV2(InputStream inputStream, Writer responseWriter) throws IOException {
+//        ServletInputStream inputStream = request.getInputStream();
+    //inputStream은 바이트 코드이기에 UTF_8로 인코딩해서 copyToString한다
+    String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+    log.info("messageBody={}", messageBody);
+    responseWriter.write("ok");
+
+  }
+
+  //인풋 스트림과 writer를 바로 받을 수 있다. -> v2
+  @PostMapping("/request-body-string-v3")
+  public HttpEntity<String> requestBodyStringV3(HttpEntity<String> httpEntity) throws IOException {
+
+    String messageBody = httpEntity.getBody();
+    log.info("messageBody={}", messageBody);
+    return new HttpEntity<>("ok");
+  }
+
+
+  //이게 젤 많이 쓰는 것 
+  @ResponseBody
+  @PostMapping("/request-body-string-v4")
+  public String requestBodyStringV4(@RequestBody String messageBody) throws IOException {
+
+    log.info("messageBody={}", messageBody);
+    return "ok";
+  }
+
+}
+
+```
+- 위의 버젼 중 가장 많이 쓰이는 버젼은 v4로 InputStream을 읽고 messageConverter를 이용, 메시지 변환하는 과정을 자동화 시킨 것이라고 볼 수 있다. 
+- @RequestBody
+  - HTTP 메시지 바디 정보를 편리하게 조회 가능. 
+  - 헤더 정보가 필요하다면 HttpEntity를 사용하거나 @RequestHeader를 사용하면 된다.
+  - 이렇게 메시지 바디를 직접 조회하는 기능은 요청 파라미터를 조회하는 @RequestParam, @ModelAttribute와는 전혀 관계가 없다
+- 요약 하면 다음과 같다.
+  - 요청 파라미터를 조회하는 기능: @RequestParam, @ModelAttribute
+  - HTTP 메시지 바디를 직접 조회하는 기능: @RequestBody
+
+- @ResponseBody
+  - @ResponseBody를 사용하면 응답 결과를 HTTP 메시지 바디에 직접 말아서 전달 가능하다
+  - 이 경우에도 view를 resolve 하지 않음
+
+
 </div>
 </details>
