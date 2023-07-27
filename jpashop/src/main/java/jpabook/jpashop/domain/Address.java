@@ -1,6 +1,7 @@
 package jpabook.jpashop.domain;
 
 import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
@@ -11,6 +12,7 @@ import lombok.Getter;
  */
 @Embeddable
 @Getter
+@AllArgsConstructor
 public class Address {
 
     //jpa 스펙 상 리플렉션이나 프록시 같은 기술을 사용하기 위해 필요한 기본 생성자
