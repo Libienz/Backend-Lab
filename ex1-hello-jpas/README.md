@@ -1,4 +1,4 @@
-## JPA 영속성 관리
+
 
 <details>
 <summary>01. 영속성 컨텍스트 </summary>
@@ -47,5 +47,92 @@
     ![img_1.png](img_1.png)
   - 지연 로딩
 - 
+</div>
+</details>
+
+
+<details>
+<summary>02. 엔티티 매핑 </summary>
+<div markdown="1">
+
+### @Entitiy
+- @Entity가 붙은 클래스는 jpa가 관리, 엔티티라 한다.
+- 테이블과 객체를 매핑할 클래스에 @Entity를 붙여주면 된다.
+- 어노테이션을 사용하기 위해서 기본 생성자 필수!(접근 제어는 public 혹은 protected)
+- final 클래스, enum, interface, inner 클래스는 사용 불가
+- 저장할 필드에 final 사용 X
+
+### 데이터베이스 스키마 자동 생성
+- DDL을 애플리케이션 실행 시점에 자동 생성
+- propertiy 파일에 DDL 행동의 속성을 설정할 수 있는데 create, create-drop, update, validate, none과 같은 속성들이 있다 
+- 운영 장비에는 절대 create, create-drop, update를 사용하지 말자 (전부 지워버리는 수가 있다)
+- 개발 초기 단계는 create 또는 update
+- 많은 개발자들이 모여서 사용하는 테스트 서버는 update 또는 validate
+- 스테이징과 운영 서버는 validate 또는 none을 사용하자
+
+### 필드와 컬럼 매핑
+### @Column
+  - name: 필드와 매핑할 테이블의 컬럼 이름
+  - insertable, updatable: 등록, 변경 가능 여부
+  - nullable: 컬럼에 유니크 제약조건을 걸 때 사용
+  - columnDefinition: 데이터베이스 컬럼 정보를 직접 줄 수 있다. 
+    - ex) varchar(100) default ‘EMPTY'
+  - length: 문자 길이 제약 조건
+  - precision, scale: bigDecimal 타입에서 사용 floating number의 정밀도와 scale 지정
+### @Enumerated
+  - 자바 enum 타입을 매핑할 때 사용
+  - 두가지 ORDINAL과 STRING 이쓴ㄴ데 항상 STRING을 사용하도록 하자 
+### @Temporal
+  - 날짜 타입을 매핑할 떄 사용
+  - but 충분히 높은 버젼의 hibernate을 사용하고 있다면 LocalDate, LocalDateTime을 @Temporal없이 사용 가능
+### @Lob
+  - 데이터베이스 BLOB, CLOB 타입과 매핑
+  - 지정할 수 있는 속성 없음
+  - 매핑하는 필드 타입이 문자면 CLOB 매핑, 나머지는 BLOB 매핑
+### @Transient
+  - 필드 매핑 X
+  - 데이터베이스에 저장 X
+
+### 기본 키 매핑 어노테이션
+
+### @Id
+- PK임을 알림
+### @GeneratedValue
+- 키를 자동 생성 하도록 설정
+- Strategies
+  - IDENTITY: 데이터베이스에 위임
+    - DB에 넣을 때 null로 주고 DB에서 키를 알아서 생성하도록 위임한다
+    - 다만 persist 시점에 영속성 컨텍스트에서 관리하기 위해 SQL을 flush시점이 아니더라도 persist 시점에 바로 푸쉬한다.  
+    - 버퍼의 장점을 누리지 못하지만 생각보다 cardinal한 성능저하는 일어나지 않음
+  - SEQUENCE: 데이터베이스 시퀀스 오브젝트 사용
+    - 오라클에서 많이 사용
+    - jpa가 시퀀스 값을 db로 부터 가져와서 메모리에 저장한다. 
+    - 데이터 베이스에 call next value 쿼리를 보내어 시퀀스 오브젝트의 값을 가져온다
+    - 시퀀스 값은 db에서 미리 정의 되어 있는 것이 IDENTITY와의 차이점 (가져온 후에 영속성 컨텍스트에 저장하는 것도 차이점)
+    - 시퀀스 제네레이터는 커스텀 가능
+      - 특히 주의 깊게 볼 속성은 allocationSize
+      - allocationSize = 50(default)으로 하면 DB에서 시퀀스를 가져올 때 50개를 가져와서 로컬 메모리에 저장할 수 있다
+      - 1번 할때마다 네트워크를 타면 부담스러우니 allocationSize이용하면 성능 최적화를 이룰 수 있다
+      - 이론적으로는 사이즈가 크면 클수록 좋지만 웹서버를 내리는 시점에 id 값의 구멍이 생길 수 있다 (굳이 구멍 생겨도 문제는 없지만)
+  - TABLE: 키 생성용 테이블 사용, 모든 DB에서 사용
+    - 테이블을 직접사용하다 보니 락도 걸릴 수 있고 성능이 떨어질 수 있음
+    - 잘 사용되는 매핑 전략은 아님
+  - AUTO: 방언에 따라 자동 지정, default
+- 결론은 뭘쓰냐!? 
+  - 기본 키는 null이면 안되고 유일해야 하고 변하면 안된다.(서비스의 요소를 pk로 끌어오지 말자)
+  - 권장: Long형 + 대체키 + 키 생성전략 사용(AUTO_INCREMENT나 SEQUENCE 전략 사용)
+- 
+
+</div>
+</details>
+
+
+
+<details>
+<summary>03. 연관관계 매핑 </summary>
+<div markdown="1">
+
+
+
 </div>
 </details>
