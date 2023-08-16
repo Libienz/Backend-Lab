@@ -20,7 +20,6 @@ public class JpaMain {
             //비영속
             Member member = new Member();
             member.setId(1L);
-            member.setName("HelloA");
             //영속화 (아직 db에 저장 안함)
             em.persist(member);
             //영속 상태가 된 후에 commit을 해야 영속 컨텍스트에 있는 애들의 쿼리가 나간다.
