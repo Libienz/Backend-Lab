@@ -547,3 +547,87 @@
 
 </div>
 </details>
+
+
+
+
+<details>
+<summary>08. 객체지향 쿼리 언어 </summary>
+<div markdown="1">
+
+### JPA 제공, 다양한 쿼리 방법
+- JPQL
+- JPA Criteria
+- QueryDSL
+- 네이티브 SQL
+- JDBC API 직접 사용, MyBatis, SpringJdbcTemplate 사용
+
+### JPQL
+- JPA를 사용하면 엔티티 객체를 중심으로 개발하게 된다.
+- 문제는 검색 쿼리
+- 검색을 할 때도 테이블이 아닌 객체를 대상으로 검색 가능하게 하는 것이 JPQL
+- 원래 DB는 SQL을 소비한다. 
+- 그렇다면 JPQL은 모든 DB 데이터를 객체로 변환해서 검색을 가능하게 하는가?? NO! 종국에는 JPQL이 SQL로 번역되어 실행된다
+- JPQL은 SQL 문법과 유사
+![img_19.png](img_19.png)
+- jpql은 동적 쿼리를 만들어 내기 어렵다는 단점이 있다(분기로 나누어 쿼리 스트링을 잘라내고 덧붙이고 할 수는 있지만 번거롭다)
+- 동적인 쿼리를 쉽게 생성하기 위해 아래의 criteria와 queryDSL 방법이 있다
+
+### Criteria
+![img_20.png](img_20.png)
+- 문자가 아닌 자바코드로 JPQL을 작성할 수 있다
+- JPA 공식 기능이지만 너무 복잡하고 실용성이 없어 범용되지 않는 분위기 인듯
+- 이대신에 QueryDSL을 사용하는 것이 권장된다.
+
+### QueryDSL
+- 문자가 아닌 자바 코드로 JPQL을 작성할 수 있다는 점에서 Criteria와 동일
+- JPQL 빌더 역할을 하는 것
+- 자바 코드로 이루어짐으로 컴파일 시점에 문법 오류를 찾을 수 있고 동적 쿼리를 작성하기 편하다!
+- 사용 권장!
+![img_22.png](img_22.png)
+### Native SQL
+- JPA가 제공하는 SQL을 직접 사용하는 기능
+- JPQL로 해결할 수 없는 특정 데이터베이스에 의존적인 기능이 필요한 경우 사용된다. (ex 오라클 CONNECT BY)
+![img_21.png](img_21.png)
+
+### JPQL 문법과 기능
+- JPQL은 객체지향 쿼리 언어다.
+- 따라서 테이블을 대상으로 쿼리 하는 것이 아니라 엔티티 객체를 대상으로 쿼리한다.
+- JPQL은 SQL을 추상화해서 특정데이터베이스 SQL에 의존하지 않는다.
+- JPQL은 결국 SQL로 변환된다.
+- ![img_24.png](img_24.png)
+- 집합과 정렬 같은 SQL ANSI 표준 function을 지원한다.
+
+### JPQL 문법
+![img_23.png](img_23.png)
+- 엔티티와 속성은 대소문자 구분 O
+- JPQL 키워드는 대소문자 구분 X
+- 엔티티 이름 사용! (테이블 이름 아님)
+
+### TypeQuery와 Query
+- TypeQuery: 반환 타입이 명확할 때 사용
+- ![img_25.png](img_25.png)
+- Query: 반환 타입이 명확하지 않을 때 사용
+- ![img_26.png](img_26.png)
+- 참고로 query를 저렇게 초기화하고 쓰기보다는 em.create**하고 메서드의 체인으로 이어나가는 것이 일반적
+
+### 결과 조회 API
+- query.getResultList(): 결과가 하나 이상일 때 리스트 반환
+  - 결과가 없으면 빈 리스트를 반환함으로 null에 대한 고민은 할 필요 X
+- query.getSingleResult(): 결과가 정확히 하나일 때 단일 객체 반환
+  - 결과가 없으면: NoResultException
+  - 결과가 둘 이상이면: NonUniqueResultException
+  - 이걸 try catch로 감싸기는 조금...
+  - 스프링 데이터 jpa에서는 try catch로 감싼 버전의 메서드가 있는데 그걸 쓰는듯? (없으면 null을 주도록 설정되어 있다고 함)
+
+### 파라미터(검색 조건) 바인딩
+- 이름 기준 
+![img_27.png](img_27.png)
+- 위치 기준
+![img_28.png](img_28.png)
+- 위치 기준은 쓰지 마라 
+
+
+
+</div>
+</details>
