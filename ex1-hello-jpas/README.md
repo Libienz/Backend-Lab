@@ -627,7 +627,94 @@
 ![img_28.png](img_28.png)
 - 위치 기준은 쓰지 마라 
 
+### 프로젝션
+- SELECT 절에 조회할 대상을 지정하는 것 
+- 프로젝션 대상: 엔티티, 임베디드 타입, 스칼라 타입
+- "SELECT m FROM Member m": 엔티티 프로젝션
+- "SELECT m.team FROM Member m": 엔티티 프로젝션 
+  - 멤버와 연관된 팀을 조인해서 가져온다.
+  - 하지만 이와 같은 묵시적 조인보다는 명시적으로 조인해서 가져오는 것이 좋음
+  - 항상 조인에는 튜닝의 여지가 있기 때문!
+- "SELECT m.address FROM Member m": 임베디드 타입 프로젝션 
+  - 스칼라 타입 프로젝션 하는 것 처럼 가져오면 된다. 임베디드 타입은 테이블이 없음으로 멤버를 통해서 조회할 것!
+- "SELECT m.username, m.age FROM Member m": 스칼라 타입 프로젝션
+  - DISTINCT를 통해 중복을 제거할 수 잇따
 
+### 프로젝션 - 여러 값 조회
+- "SELECT m.username, m.age FROM Member m"
+- 위와 같이 복수의 컬럼을 조회할 경우 반환된 데이터를 어떻게 handling할 수 있을까?
+1. Query 타입으로 조회 
+   - TypedQuery가 아닌 걸로 조회한다는 뜻, Object가 조회된다.
+2. Object[] 타입으로 조회
+   - 권장되는 방법이 아니다. 받아온 데이터를 전부 다운 캐스팅 해줘야 한다..
+3. new 명령어로 조회
+   - 단순 값을 미리 정의한 DTO로 조회하는 방법이다.
+   - "SELECT new jpabook.jpql.UserDto(m.username, m.age) FROM Member m"
+   - 패키지 명을 포함한 전체 클래스 명을 입력하는 것으로 가능하다
+   - 순서와 타입이 일치하는 생성자가 미리 필요하다.
 
+### 페이징 
+- 페이징이란? 데이터베이스에서 정해진 개수와 시작지점을 통해 특정 영역의 데이터를 불러오는 것
+- JPA에서는 페이징을 다음 두 API로 추상화 한다.
+  - setFirstResult(int startPosition): 조회 시작 위치
+  - setMaxResults(int maxResult): 조회할 데이터 수
+- 원래는 이게 방언마다 굉장히 복잡한 쿼리를 필요로 함 특히 오라클은 3 depth를 통해 페이징을 구현하는데 다음처럼 복잡하다.
+- ![img_29.png](img_29.png)
+- JPA에서는 두가지 api로 충분!
+
+### 조인
+- 내부 조인: SELECT m FROM Member m [INNER] JOIN m.team t
+  - 내부 조인이란? 동일한 값이 있는 (조인 조건을 만족하는) 행만을 반환한다. 교집합을 반환!
+- 외부 조인: SELECT m FROM Member m LEFT [OUTER] JOIN m.team t
+  - 외부 조인이란? 테이블 두개를 조인하되 조인의 대상이 되는 테이블에 값이 없을 경우 null로 채워서 반환 
+- 세타 조인: SELECT COUNT(m) FROM Member m, Team t WHERE m.username = t.name
+  - 세타 조인이란? cartesian product를 한 테이블에서 WHERE절을 만족하는 row들을 반환하는 것
+
+### 조인 ON 절
+1. 조인 대상 필터링
+2. 연관관계 없는 엔티티 외부 조인
+- 위의 두가지를 가능하게 하는 join ON 절 
+- jpa 2.1부터 지원한다.
+
+### 조인 대상 필터링 
+- ex) 회원과 팀을 조인하면서, 팀 이름이 A인 팀만 조인
+- JPQL: "SELECT m, t FROM Member m LEFT JOIN m.team t on t.name = 'A'"
+
+### 연관관계 없는 엔티티 외부 조인
+- ex) 회원의 이름과 팀의 이름이 같은 대상 외부 조인
+- JPQL: "SELECT m, t FROM Member m LEFT JOIN Team t on m.username = t.name"
+
+### 쿼리 안의 서브 쿼리
+- 나이가 평균보다 많은 회원
+  - select m from Member m
+    where m.age > (select avg(m2.age) from Member m2)
+- 한 건이라도 주문한 고객
+  - select m from Member m
+    where (select count(o) from Order o where m = o.member) > 0
+
+### 서브 쿼리 지원 함수
+- [NOT] EXISTS (subquery): 서브쿼리에 결과가 존재하면 참
+  - {ALL | ANY | SOME} (subquery)
+  - ALL 모두 만족하면 참
+  - ANY, SOME: 같은 의미, 조건을 하나라도 만족하면 참
+- [NOT] IN (subquery): 서브쿼리의 결과 중 하나라도 같은 것이 있으면 참
+
+### 서브 쿼리 - 예제
+- 팀 A 소속인 회원
+  - select m from Member m
+    where exists (select t from m.team t where t.name = ‘팀A')
+
+- 전체 상품 각각의 재고보다 주문량이 많은 주문들
+  - select o from Order o
+    where o.orderAmount > ALL (select p.stockAmount from Product p)
+- 어떤 팀이든 팀에 소속된 회원
+  - select m from Member m
+    where m.team = ANY (select t from Team t)
+
+### JPA 서브 쿼리 한계
+- JPA는 WHERE, HAVING 절에서만 서브 쿼리 사용 가능
+- SELECT 절도 가능 (하이버네이트에서 지원)
+- FROM 절의 서브 쿼리는 현재 JPQL에서 불가능!
+  - 조인으로 풀 수 있으면 풀어서 해결하라
 </div>
 </details>
