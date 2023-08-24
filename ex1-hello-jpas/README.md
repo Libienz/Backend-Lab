@@ -716,5 +716,156 @@
 - SELECT 절도 가능 (하이버네이트에서 지원)
 - FROM 절의 서브 쿼리는 현재 JPQL에서 불가능!
   - 조인으로 풀 수 있으면 풀어서 해결하라
+
+### 경로 표현식
+- .(점)을 찍어 객체 그래프를 탐색하는 것이 경로 표현식이다. 
+  - 객체 그래프란? 객체들 간의 복잡한 관계를 그래프라고 부른다. (서로 연관관계를 가지며 얽혀있는 객체들을 얘기하는 것)
+- ![img_30.png](img_30.png)
+- 위의 상태 필드, 단일 값 연관 필드, 컬렉션 값 연관 필드 모두 객체 그래프를 탐색한 경로 표현식이다
+
+### 경로 표현식 특징
+- 상태 필드(state field): 단순히 값을 저장하기 위한 필드 (ex: m.username)
+  - 경로 탐색의 끝, 추가적 탐색 불가
+- 연관 필드(association field): 연관관계를 위한 필드 
+  - 단일 값 연관 필드: @~ToOne, 대상이 엔티티 (ex: m.team)
+    - 묵시적 내부 조인 발생, 탐색 추가로 가능
+  - 컬렉션 값 연관 필드: @~ToMany, 대상이 컬렉션 (ex: m.orders)
+    - 묵시적 내부 조인 발생, 탐색 추가적으로 불가
+
+### 경로 탐색을 사용한 묵시적 조인 시 주의 사항
+- 항상 내부 조인이 일어난다. (외부 조인 불가)
+- 컬렉션은 경로 탐색의 끝, 명시적 조인을 통해 별칭을 얻어 추가 탐색을 가능하게 할 수 있음
+  - select t.members from Team t 탐색 불가
+  - select m.탐색 from Team t join t.members m 탐색 가능 명시적  join으로 별칭 얻고 탐색 가능
+
+### 권장 사항
+- 가급적 묵시적 조인 대신에 명시적 조인을 사용하라
+- 조인은 SQL 튜닝에 중요 포인트이다.
+- 묵시적 조인은 조인이 일어나는 상황을 한눈에 파악하기 어려움
+
+
+### 페치 조인 
+- 페치 조인은 SQL의 조인 종류 중 하나가 아니다!
+- JPQL에서 성능 최적화를 위해 제공하는 기능
+- 연관된 엔티티나 컬렉션을 SQL 한 번에 함께 조회하는 기능
+- join fetch 명령어를 사용하여 사용가능
+- 페치 조인::= [ LEFT [OUTER] | INNER ] JOIN FETCH 조인경로
+
+### 엔티티 페치 조인
+- 회원을 조회하면서 연관된 팀도 함께 조회(SQL 한번에)
+- SQL을 보면 회원 뿐만 아니라 Team도 함께 SELECT하는 것을 확인 가능
+- ![img_31.png](img_31.png)
+- ![img_32.png](img_32.png)
+
+### 페치 조인 사용 코드 
+```java 
+String jpql = "select m from Member m join fetch m.team";
+List<Member> members = em.createQuery(jpql, Member.class)
+ .getResultList();
+for (Member member : members) {
+ //페치 조인으로 회원과 팀을 함께 조회해서 지연 로딩X
+ System.out.println("username = " + member.getUsername() + ", " +
+ "teamName = " + member.getTeam().name()); 
+}
+```
+### 페치 조인과 EAGER와 LAZY 모두 다르게 동작함을 알아라!
+- 즉시 로딩(EARGR로 설정)
+1. 멤버 전체를 조회하기 위해 JPQL 실행 select m from member m
+
+2. JPQL은 EAGER와 무관하게 SQL로 그대로 번역 -> select m.* from member
+
+3. JPQL 결과가 member만 조회하고, team은 조회하지 않음
+
+4. member와 team이 즉시 로딩으로 설정되어 있기 때문에 연관된 팀을 각각 쿼리를 날려서 추가 조회 (N+1)
+
+- 지연 로딩(LAZY로 설정)
+
+1. 멤버 전체를 조회하기 위해 JPQL 실행 select m from member m
+
+2. JPQL은 EAGER와 무관하게 SQL로 그대로 번역 -> select m.* from member
+
+3. JPQL 결과가 member만 조회하고, team은 조회하지 않음
+
+4. member와 team이 지연 로딩으로 설정되어 있기 때문에 가짜 프록시 객체를 넣어두고, 실제 회원은 팀은 조회하지 않음
+
+5. 실제 team을 사용하는 시점에 쿼리를 날려서 각각 조회(N+1)
+
+- fetch join 또는 엔티티 그래프(EAGER, LAZY 상관 없음)
+
+1. 멤버와 팀을 한번에 조회하기 위해 JPQL+fetch join 실행 select m from member m join fetch m.team
+
+2. JPQL에서 fetch join을 사용했으므로 SQL은 멤버와 팀을 한 쿼리로 조회 -> select m.*, t.* from member join team ...
+
+3. JPQL 결과가 member와 team을 한꺼번에 조회함
+
+4. member와 team이 fetch join으로 한번에 조회되었으므로 N+1 문제가 발생하지 않음
+### 참고 
+- https://www.inflearn.com/questions/39516/fetch-%EC%A1%B0%EC%9D%B8-%EC%97%94%ED%8B%B0%ED%8B%B0-%EA%B7%B8%EB%9E%98%ED%94%84-%EC%A7%88%EB%AC%B8%EC%9E%85%EB%8B%88%EB%8B%A4
+
+### 컬렉션 페치 조인
+- 일대다 관계, 컬렉션 페치 조인
+- ![img_33.png](img_33.png)
+- ![img_34.png](img_34.png)
+- Team입장에서 조인을 하면 위 그림처럼 데이터가 뻥튀기 된다! 
+  - 팀A에 속한 멤버가 두명이다 조인 결과 테이블이 위의 그림처럼 되는 것
+  - 살펴보면 팀A가 두번 나오는 것을 확인 가능하다.
+  - result도 두개가 나온다 (줄일 수 있긴하다 DISTINCT라던지 하지만 TABLE레벨에서는 저렇게 가져오는 것이 맞기에 어떻게 사용할지는 개발자에게 맡긴 것)
+  - 팀A에 몇명이 속한지는 jpa는 사전파악이 불가 결과를 줄줄 가져오는 것을 기억하자 
+
+
+### 컬렉션 페치 조인 사용 코드
+```java
+String jpql = "select t from Team t join fetch t.members where t.name = '팀A'"
+List<Team> teams = em.createQuery(jpql, Team.class).getResultList();
+for(Team team : teams) {
+ System.out.println("teamname = " + team.getName() + ", team = " + team);
+ for (Member member : team.getMembers()) {
+ //페치 조인으로 팀과 회원을 함께 조회해서 지연 로딩 발생 안함
+ System.out.println(“-> username = " + member.getUsername()+ ", member = " + member);
+ }
+}
+```
+
+### 페치 조인과 DISTINCT
+- SQL의 DISTINCT는 중복된 결과를 제거하는 명령
+- JPQL의 DISTINCT 2가지 기능 제공
+  - SQL에 DISTINCT를 추가
+  - 애플리케이션에서 엔티티 중복을 제거 
+  - DISTINCT를 SQL에 걸고 애플리케이션에 반환된 데이터의 중복까지 검토해주는 것이다.
+- select distinct t
+  from Team t join fetch t.members
+  where t.name = ‘팀A
+- 위와 같이 사용하면 SQL에 DISTINCT를 추가하지만 SQL에 추가된 DISTINCT만으로는 중복 결과를 완전히 지워내지 않는다.
+  - SQL의 DISTINCT는 row의 모든 컬럼이 완전히 똑같아야 지워낸다.
+  - 하지만 JPQL에서 사용된 DISTINCT이기에 어플리케이션 레벨에서 중복된 엔티티가 지워진다!
+  - ![img_35.png](img_35.png)
+  - 참고: 하이버네이트 6부터는 DISTINCT 명령어를 사용하지 않아도 애플리케이션에서 중복 제거가 자동으로 적용된다.
+
+### 페치 조인과 일반 조인의 차이
+- 페치 조인을 사용할 때만 연관된 엔티티도 함께 한방 조회
+- 페치 조인은 객체 그래프를 SQL 한번에 조회하는 개념
+- 그냥 조인은 엔티티를 프로젝션하면 연관된 것을 가져오지 않는다. (SELECT 절에 지정한 것만 프로젝트 할 뿐 )
+
+### 페치 조인의 특징과 한계 
+- 페치 조인 대상에는 별칭을 줄 수 없다. (객체 그래프는 데이터를 거르면서 조회하는 것이 아니라 다 조회해와야 한다)
+- 둘 이상의 컬렉션은 페치 조인할 수 없다. (데이터 뻥튀기가 너무 심하기에 막은 것)
+- 컬렉션을 페치 조인하면 페이징 API를 사용할 수 없다.
+  - 단일 값 연관 필드들은 페치 조인해도 페이징 가능 (데이터 뻥튀기가 안되니까)
+  - 일대다에서는 하이버네트가 경고 로그를 남기고 메모리에서 페이징(매우 위험)
+    - 팀A 회원 1,2인 경우 페이징을 하면 팀A 회원1 이 하나의 row를 오해할 여지가 충분하다 (팀A는 회원1만 가지고 있다 등등)
+    - DISTINCT는 안되나? -> 페이징은 지극히 테이블 중심의 API이기 때문에 안된다. 
+    - 정 페이징을 하고 싶으면? 다대일로 방향을 뒤집어서 쿼리를 쓰거나 일대다인 상태에서 페치 조인 하지 않고 조회한 것을 배치 사이즈와 연결하여 N+1 문제를 완화할 수 있음
+    - @BatchSize(): 글로벌 셋팅으로 가져갈 수 도 있다. 
+    - 배치 사이즈는 한번 끌어올 때 배치로 끌어와서 N+1문제를 완화하는 것! (레이지 로딩을 끌고 올 때 나와 관련된 로딩만 하지 않고 List에 담긴 팀을 inquery로 배치 사이즈 만큼 가져오는 것 ) 
+- 연관된 엔티티들을 SQL 한번으로 조회하는 페치 조인
+- 엔티티에 직접 적용하는 글로벌 로딩 전략보다 우선함
+- 실무에서 글로벌 로딩 전략은 모두 지연로딩으로 잡고 최적화가 필요한 곳은 페치 조인을 적용한다.
+
+### 페치 조인 - 정리
+- 모든 것을 페치 조인으로 해결할 수는 없음
+- 페치 조인은 객체 그래프를 유지할 때 사용하면 효과적
+- 여러 테이블을 조인해서 엔티티가 가진 모양이 아닌 전혀 다른 결과를 내야 하면, 페치 조인 보다는 일반 조인을 사용하고 필요한 데이터들만 조회해서 DTO로 반환하는 것이 효과적
+
+
 </div>
 </details>
