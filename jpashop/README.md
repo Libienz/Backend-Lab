@@ -289,5 +289,30 @@ public List<Order> findAllWithMemberDelivery() {
 - 엔티티를 페치 조인을 사용해서 쿼리 1번에 조회
 - 페치 조인으로 order -> member, order -> delivery는 이미 조회된 상태임으로 지연로딩 X
 
+### 주문 조회 V4
+- JPA에서 DTO로 바로 조회
+
+```java
+
+public List<OrderSimpleQueryDto> findOrderDtos() {
+      return em.createQuery(
+      "select new jpabook.jpashop.repository.OrderSimpleQueryDto(o.id, m.name, o.orderDate, o.orderStatus, d.address)" +
+      " from Order o" +
+      " join o.member m" +
+      " join o.delivery d", OrderSimpleQueryDto.class
+      ).getResultList();
+}
+```
+- 일반적인 SQL을 사용할 때 처럼 원하는 값을 선택해서 조회
+- new 명령어를 사용해서 JPQL의 결과를 DTO로 즉시 변환!
+- SELECT절에서 원하는 데이터를 직접 선택하므로 DB -> 애플리케이션 네트웍 용량 최적화 (생각보다 미비)
+- 리포지토리 재사용성 떨어짐, API 스펙에 맞춘 코드가 리포지토리에 들어가는 꼴
+- 엔티티를 DTO로 변환하거나(V3) DTO로 바로 조회하는(V4) 두가지 방법은 각각 장단점이 있다.
+  - V3: 리포지토리 코드 재사용성 굳. repository가 엔티티만을 조회할 수 있도록 일관성을 준다.
+  - V4: 조회성능 미비하게 끌어올린다. (엔티티를 통째로 받아오지 않고 join한 테이블에서 내가 원하는 데이터만 냠냠 가능)
+
+- 잠깐 잠깐 넘어가기 전에 join과 fetch join의 차이점 다시 짚고 가자!
+- https://cobbybb.tistory.com/18
+
 </div>
 </details>
