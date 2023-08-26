@@ -246,6 +246,33 @@ public class InitDb {
   - 연관관계가 필요 없는 경우에도 항상 조회하기에 성능 문제가 발생할 수 있는 것. 
   - 항상 지연 로딩을 기본으로 하고, 성능 최적화가 필요한 경우에는 페치 조인을 사용하시오
 
+### 주문 조회 V2
+- 엔티티를 DTO로 변환!
+
+```java
+/**
+ * V2. 엔티티를 조회해서 DTO로 변환(fetch join 사용X)
+ * - 단점: 지연로딩으로 쿼리 N번 호출
+ */
+@GetMapping("/api/v2/simple-orders")
+public List<SimpleOrderDto> ordersV2() {
+  List<Order> orders = orderRepository.findAll();
+  List<SimpleOrderDto> result = orders.stream()
+    .map(o -> new SimpleOrderDto(o))
+    .collect(toList());
+  return result;
+}
+```
+- 엔티티를 DTO로 변환하는 일반적인 방법이다.
+- 여기에서 List를 한 꺼풀 더 씌우면 더 좋은 설계 (해당 예제에선 생략)
+- 문제점
+  - 쿼리가 총 1 + N + N번 실행된다.
+  - Order 조회 1번 (order 조회 결과 row 수가 N이 된다.)
+  - order -> member 지연 로딩 조회 N번
+  - order -> delivery 지연 로딩 조회 N번
+  - 예) order의 결과가 4개면 최악의 경우 1 + 4 + 4번 실행된다 (최악의 경우)
+    - 지연로딩은 영속성 컨텍스트에서 조회함으로 이미 조회된 경우 쿼리를 생략한다
+    - 따라서 위에서 최악의 경우라고 명시한 것!
 
 </div>
 </details>
