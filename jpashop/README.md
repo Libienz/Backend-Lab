@@ -214,3 +214,38 @@ public class InitDb {
 
 </div>
 </details>
+
+
+<details>
+<summary>Section 03: API 개발 고급 - 지연 로딩과 조회 성능 최적화</summary>
+<div markdown="1">
+
+### 주문 조회 V1
+- 간단한 주문 조회를 살펴보자
+```java
+ @GetMapping("/api/v1/simple-orders")
+ public List<Order> ordersV1() {
+ List<Order> all = orderRepository.findAllByString(new OrderSearch());
+   for (Order order : all) {
+     order.getMember().getName(); //Lazy 강제 초기화
+     order.getDelivery().getAddress(); //Lazy 강제 초기환
+   }
+   return all;
+ }
+```
+- 문제점들
+  - 엔티티를 직접 노출하는 것은 좋지 않다.
+  - order -> member 와 order -> address는 지연 로딩! 따라서 실제 엔티티 대신에 프록시가 존재
+  - jackson 라이브러리는 기본적으로 이 프록시 객체를 json으로 어떻게 생성해야 하는 지 모름 -> 예외 발생
+  - Hibernate5Module을 스프링 빈으로 등록하면 프록시 무제를 해결할 수는 있음
+  - 양방향 연관관계에서 한곳을 @JsonIgnore처리하지 않으면 양쪽을 서로 호출하면서 무한 루프가 걸릴 수 있다
+
+- 주의! 
+  - 지연로딩을 피하기 위해 즉시 로딩으로 설정하면 안된다. 
+  - 즉시 로딩으로 설정하면 성능 튜닝을 어렵게 한다
+  - 연관관계가 필요 없는 경우에도 항상 조회하기에 성능 문제가 발생할 수 있는 것. 
+  - 항상 지연 로딩을 기본으로 하고, 성능 최적화가 필요한 경우에는 페치 조인을 사용하시오
+
+
+</div>
+</details>
