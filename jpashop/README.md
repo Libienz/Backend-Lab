@@ -274,5 +274,20 @@ public List<SimpleOrderDto> ordersV2() {
     - 지연로딩은 영속성 컨텍스트에서 조회함으로 이미 조회된 경우 쿼리를 생략한다
     - 따라서 위에서 최악의 경우라고 명시한 것!
 
+### 주문 조회 V3
+- 페치 조인 최적화
+
+```java
+public List<Order> findAllWithMemberDelivery() {
+      return em.createQuery(
+      "select o from Order o" +
+      " join fetch o.member m" +
+      " join fetch o.delivery d", Order.class
+      ).getResultList();
+}
+```
+- 엔티티를 페치 조인을 사용해서 쿼리 1번에 조회
+- 페치 조인으로 order -> member, order -> delivery는 이미 조회된 상태임으로 지연로딩 X
+
 </div>
 </details>
