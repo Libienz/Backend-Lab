@@ -316,3 +316,88 @@ public List<OrderSimpleQueryDto> findOrderDtos() {
 
 </div>
 </details>
+
+<details>
+<summary>Section 04: API 개발 고급 - 컬렉션 조회 최적화 </summary>
+<div markdown="1">
+
+- 주문내역에서 추가로 주문한 상품 정보(OrderItem)를 추가로 조회하자
+- Order 기준으로 컬렉션인 OrderItem과 Item이 필요하다.
+- 앞의 예제에서는 toOne관계만 있었다. 이번에는 컬렉션인 일대다 관계를 조회하고 최적화 하는 방법을 알아보자
+
+### 주문 조회 V1: 엔티티 직접 노출
+```java
+    @GetMapping("/api/v1/orders")
+    public List<Order> ordersV1() {
+        List<Order> all = orderRepository.findAllByString(new OrderSearch());
+        // PROXY TOUCH
+        for (Order order : all) {
+            order.getMember().getName();
+            order.getDelivery().getAddress();
+            List<OrderItem> orderItems = order.getOrderItems();
+            orderItems.stream().forEach(o -> o.getItem().getName());
+
+        }
+        return all;
+    }
+```
+- 문제점 
+  - 엔티티를 직접 노출 한다.
+  - 양방향 연관관계면 무한 루프에 걸리지 않게 한곳에 @JsonIgnore를 추가해야 한다.
+  - 프록시를 터치하여 초기화 해야 한다.
+
+### 주문 조회 V2: 엔티티를 DTO로 변환
+```java
+    @GetMapping("/api/v2/orders")
+    public List<OrderDto> ordersV2() {
+        List<Order> orders = orderRepository.findAllByString(new OrderSearch());
+        List<OrderDto> collect = orders.stream()
+                .map(o -> new OrderDto(o))
+                .collect((Collectors.toList()));
+
+        return collect;
+    }
+
+    @Getter
+    static class OrderDto {
+        private Long orderId;
+        private String name;
+        private LocalDateTime orderDate;
+        private Address address;
+        private List<OrderItemDto> orderItems;
+
+        public OrderDto(Order order) {
+            orderId = order.getId();
+            name = order.getMember().getName();
+            orderDate = order.getOrderDate();
+            address = order.getDelivery().getAddress();
+            orderItems = order.getOrderItems().stream()
+                    .map(orderItem -> new OrderItemDto(orderItem))
+                    .collect(Collectors.toList());
+
+        }
+    }
+
+    static class OrderItemDto {
+        private String itemName;
+        private int orderPrice;
+        private int count;
+
+        public OrderItemDto(OrderItem orderItem) {
+            itemName = orderItem.getItem().getName();
+            orderPrice = orderItem.getOrderPrice();
+            count = orderItem.getCount();
+        }
+    }
+
+```
+- 문제점 
+  - 지연 로딩으로 너무 많은 SQL이 실행된다.
+  - SQL 실행 수
+    - order 1번 (order 조회 수 N)
+    - member, address N번
+    - orderItem N번
+    - item N번 (orderItem 조회 수 N)
+
+</div>
+</details>
