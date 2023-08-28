@@ -44,6 +44,10 @@ public class OrderApiController {
         return collect;
     }
 
+    @GetMapping("/api/v3/orders")
+    public List<OrderDto> orderV3() {
+        orderRepository.findAllWithItem();
+    }
     @Getter
     static class OrderDto {
         private Long orderId;
