@@ -399,5 +399,33 @@ public List<OrderSimpleQueryDto> findOrderDtos() {
     - orderItem N번
     - item N번 (orderItem 조회 수 N)
 
+
+### 주문 조회 V3: 엔티티를 DTO로 변환 - 페치 조인 최적화
+```java
+    public List<Order> findAllWithItem() {
+        return em.createQuery(
+                        "select o from Order o" +
+                                " join fetch o.member m" +
+                                " join fetch o.delivery d" +
+                                " join fetch o.orderItems oi" +
+                                " join fetch oi.item i", Order.class)
+                .getResultList();
+    }
+```
+- 페치 조인으로 SQL이 1번만 실행됨
+- distinct를 사용한 이유는 1대다 조인이 있음으로 데이터베이스 row가 증가하기 때문
+  - 그 결과 같은 order엔티티의 조회 수도 증가하게 된다. 
+  - JPA의 distinct는 SQL에 distinct를 추가하고, 더해서 같은 엔티티가 조회되면, 애플리케이션에서 중복을 걸러준다.
+  - 이 예에서 order가 컬렉션 페이 조인 때문에 중복 조회 되는 것을 막아준다.
+- 단점 - 페이징 불가능!
+  - 컬렉션 페치 조인을 사용하면 페이징이 불가능하다. 하이버네이트는 경고 로그를 남기면서 모든 데이터를 DB에서 읽어오고, 메모리에서 페이징 해버린다
+  - 즉 페이징 sql이 작성되지 않는 것
+    - Why! 
+      - DB에서의 테이블은 distinct를 멕여도 모든 col이 똑같지 않다면 중복을 제거하지 않는다. 
+      - 즉 페이징을 하고자 할 때 distinct가 먹지 않은 상태로 들어가기에 싱크가 맞지 않기에 DB에 요청할 수 없는 것 
+
+  - 메모리에 퍼올린다음 애플리케이션레벨에서 페이징이 들어가는 것인데 매우매우 위험하다 (메모리 터질수도)
+- 참고 : 컬렉션 페치 조인은 1개만 사용할 수 있다. 컬렉션 둘 이상에 페치 조인을 사용하면 안된다. 데이터가 부정합하게 조회될 수 있다. 
+
 </div>
 </details>
