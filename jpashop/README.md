@@ -483,5 +483,36 @@ public List<OrderSimpleQueryDto> findOrderDtos() {
     - 하지만 애플리케이션은 100이든 1000이든 결국 전체 데이터를 로딩해야 함으로 메모리 사용량이 같다.
     - 1000으로 설정하는 것이 성능상 가장 좋지만, 결국 DB든 애플리케이션이든 순간 부하를 어디까지 견딜 수 있는지로 결정하면 된다.
 
+### 주문 조회 V4: JPA에서 DTO 직접 조회 
+```java
+
+    public List<OrderQueryDto> findOrderQueryDtos() {
+        List<OrderQueryDto> result = findOrders();
+        result.forEach(o -> {
+            List<OrderItemQueryDto> orderItems = findOrderItems(o.getOrderId());
+            o.setOrderItems(orderItems);
+        });
+
+        return result;
+    }
+
+    private List<OrderItemQueryDto> findOrderItems(Long orderId) {
+        return em.createQuery(
+                        "select new jpabook.jpashop.repository.order.query.OrderItemQueryDto(oi.order.id, i.name, oi.orderPrice, oi.count)" +
+                                " from OrderItem oi" +
+                                " join oi.item i" +
+                                " where oi.order.id = :orderId", OrderItemQueryDto.class
+                )
+                .setParameter("orderId", orderId)
+                .getResultList();
+    }
+```
+- Query: 루트 1번, 컬렉션 N번 실행
+- ToOne 관계들을 먼저 조회하고, ToMany 관계는 각각 별도로 처리한다.
+  - 이런 방식을 선택한 이유는 다음과 같다.
+  - ToOne관계는 조인해도 데이터 row수가 증가하지 않는다.
+  - ToMany 관계는 조인하면 row수가 증가한다.
+- row수가 증가하지 않는 ToOne관계는 조인으로 최적화 하기 쉬움으로 한번에 조회하고 ToMany관계는 최적화 하기 어려움으로 findorderItems같은 별도의 메서드로 조회한 것
+
 </div>
 </details>
