@@ -563,6 +563,49 @@ public List<OrderSimpleQueryDto> findOrderDtos() {
 - ToOne 관계들을 먼저 조회하고, 여기서 얻은 식별자 orderId로 ToMany 관계인 orderItem을 명시적 IN Query로 한번에 조회
 - Map을 이용해서 result에 추가한다. 
 
+### 주문 조회 V6: JPA에서 DTO로 직접 조회 플랫 데이터 최적화
+- OrderApiController
+
+```java
+
+    @GetMapping("/api/v6/orders")
+    public List<OrderQueryDto> orderV6() {
+        List<OrderFlatDto> flats = orderQueryRepository.findAllByDto_flat();
+
+        return flats.stream()
+                .collect(groupingBy(o -> new OrderQueryDto(o.getOrderId(),
+                                o.getName(), o.getOrderDate(), o.getOrderStatus(), o.getAddress()),
+                        mapping(o -> new OrderItemQueryDto(o.getOrderId(),
+                                o.getItemName(), o.getOrderPrice(), o.getCount()), toList())
+                )).entrySet().stream()
+                .map(e -> new OrderQueryDto(e.getKey().getOrderId(),
+                        e.getKey().getName(), e.getKey().getOrderDate(), e.getKey().getOrderStatus(),
+                        e.getKey().getAddress(), e.getValue()))
+                .collect(toList());
+    }
+```
+
+- OrderQueryRepositroy
+
+```java
+
+    public List<OrderFlatDto> findAllByDto_flat() {
+        return em.createQuery(
+                "select new jpabook.jpashop.repository.order.query.OrderFlatDto(o.id, m.name, o.orderDate, o.status, d.address, oi.orderPrice, oi.count)" +
+                        " from Order o" +
+                        " join o.member m" +
+                        " join o.delivery d" +
+                        " join o.orderItems oi" +
+                        " join oi.item i", OrderFlatDto.class)
+                .getResultList();
+
+    }
+```
+- Query가 단 1번 나간다.
+- 테이블을 join해서 flat하게 만든 테이블에서 row를 돌며 애플리케이션 단에서 커스텀 하는 것이 V6
+- 애플리케이션에서 작업이 많고 Order 입장의 페이징이 불가능하다는 단점이 있으며 중복 데이터 역시 별도의 처리가 필요하다.\
+
+
 
 </div>
 </details>
