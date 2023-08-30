@@ -514,5 +514,55 @@ public List<OrderSimpleQueryDto> findOrderDtos() {
   - ToMany 관계는 조인하면 row수가 증가한다.
 - row수가 증가하지 않는 ToOne관계는 조인으로 최적화 하기 쉬움으로 한번에 조회하고 ToMany관계는 최적화 하기 어려움으로 findorderItems같은 별도의 메서드로 조회한 것
 
+### 주문 조회 V5: JPA에서 DTO 직접 조회 - 컬렉션 조회 최적화
+- OrderApiController
+```java
+
+    @GetMapping("/api/v5/orders")
+    public List<OrderQueryDto> orderV5() {
+        return orderQueryRepository.findAllByDto_optimization();
+    }
+```
+- OrderQueryRepository
+
+```java
+    public List<OrderQueryDto> findAllByDto_optimization() {
+        List<OrderQueryDto> result = findOrders();
+
+        List<Long> orderIds = toOrderIds(result);
+        Map<Long, List<OrderItemQueryDto>> orderItemMap = findOrderItemMap(orderIds);
+
+        result.forEach(o -> o.setOrderItems(orderItemMap.get(o.getOrderId())));
+
+        return result;
+    }
+
+    private Map<Long, List<OrderItemQueryDto>> findOrderItemMap(List<Long> orderIds) {
+        List<OrderItemQueryDto> orderItems = em.createQuery(
+                        "select new jpabook.jpashop.repository.order.query.OrderItemQueryDto(oi.order.id, i.name, oi.orderPrice, oi.count)" +
+                                " from OrderItem oi" +
+                                " join oi.item i" +
+                                " where oi.order.id in :orderIds", OrderItemQueryDto.class
+                )
+                .setParameter("orderIds", orderIds)
+                .getResultList();
+
+        Map<Long, List<OrderItemQueryDto>> orderItemMap = orderItems.stream()
+                .collect(Collectors.groupingBy(OrderItemQueryDto::getOrderId));
+        return orderItemMap;
+    }
+
+    private static List<Long> toOrderIds(List<OrderQueryDto> result) {
+        List<Long> orderIds = result.stream()
+                .map(o -> o.getOrderId())
+                .collect(Collectors.toList());
+        return orderIds;
+    }
+```
+- Query: 루트 1번 컬렉션 1번
+- ToOne 관계들을 먼저 조회하고, 여기서 얻은 식별자 orderId로 ToMany 관계인 orderItem을 명시적 IN Query로 한번에 조회
+- Map을 이용해서 result에 추가한다. 
+
+
 </div>
 </details>
