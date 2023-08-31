@@ -790,5 +790,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 - 꼭 동적 쿼리가 아니라 정적 쿼리인 경우에도 직관적인 문법, 컴파일 시점 오류 발견, 코드 자동완성, 코드 재사용 등을 위해서 QueryDSL을 사용하는 것이 좋다.
 - Querydsl은 JPQL을 코드로 만들 수 있도록 도와주는 빌더 역할을 할 뿐이기에 JPQL을 잘 이해하고 있다면 금방 배울 수 있다
 
+
 </div>
 </details>
