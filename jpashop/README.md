@@ -720,5 +720,75 @@ public List<OrderSimpleQueryDto> findOrderDtos() {
 <summary>Section 06: 스프링 데이터 JPA와 QueryDSL 소개 </summary>
 <div markdown="1">
 
+### 스프링 데이터 JPA 소개
+
+- 스프링 데이터 JPA는 JPA를 사용할 때 지루하게 반복하는 코드를 (Boilerplate code) 자동화 해준다. 
+
+- 원래의 MemberRepository
+```java
+package jpabook.jpashop.repository;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jpabook.jpashop.domain.Member;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public class MemberRepository {
+
+    @PersistenceContext
+    private EntityManager em;
+
+    public void save(Member member) {
+        em.persist(member); //영속성 컨텍스트에 member 삽입, transaction이 커밋되는 순간에 DB에 반영된다.(insert query가 날라가는 시점)
+    }
+
+    public Member findOne(Long id) {
+        return em.find(Member.class, id);
+    }
+
+    public List<Member> findAll() {
+        return em.createQuery("select m from Member m", Member.class) //jpql sql과 다른점이있다. sql은 테이블 대상으로 쿼리, jpql은 entitiy객체를 대상으로 쿼리
+                .getResultList();
+    }
+
+    public List<Member> findByName(String name) {
+        return em.createQuery("select m from Member m where m.name = :name", Member.class)
+                .setParameter("name", name)
+                .getResultList();
+    }
+
+}
+
+```
+- Spring Data JPA Member Repository
+
+```java
+package jpabook.jpashop.repository;
+import jpabook.jpashop.domain.Member;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
+public interface MemberRepository extends JpaRepository<Member, Long> {
+    List<Member> findByName(String name);
+}
+```
+
+- 스프링 데이터 JPA는 JpaRepository라는 인터페이스를 제공하는데, 명시적으로 구현하지 않아도 기본적인 CRUD 기능이 모두 제공된다!
+- 개발자는 인터페이스만 만들면 구현체는 스프링 데이터 JPA가 어플리케이션 실행 시점에 주입해주는 것이다.
+  - 추가적으로 위의 findByName(String name)을 보자 
+  - 스프링 데이터 jpa에서 멤버를 이름으로 조회하여 반환하는 것은 기본적으로 제공하지 않는다. (findById는 제공하지만..)
+  - 그럼에도 불구하고 signature를 정확히 기입하여 인터페이스에 올려놓으면 스프링 데이터 jpa는 이에 맞는 jpql을 생성해주는 구현체를 만들어준다!
+- 스프링 데이터 JPA는 스프링과 JPA를 활용해서 애플리케이션을 만들 때 정말 편리한 기능을 많이 제공한다. 
+- 단순히 편리함을 넘어서 때로는 마법을 부리는 것 같을 정도로 놀라운 개발 생산성의 세계로 우리를 이끌어 준다.
+- 하지만 스프링 데이터 JPA는 JPA를 사용해서 이런 기능을 제공할 뿐이니 결국 JPA자체를 잘 이해하는 것이 중요하다고 말할 수 있다.
+
+### QueryDSL
+- 실무에서는 조건에 따라서 실행되는 쿼리가 달라지는 동적 쿼리를 많이 사용한다.
+- QueryDSL을 사용하면 JPQL을 동적으로 편리하게 생성할 수 잇다.
+- 꼭 동적 쿼리가 아니라 정적 쿼리인 경우에도 직관적인 문법, 컴파일 시점 오류 발견, 코드 자동완성, 코드 재사용 등을 위해서 QueryDSL을 사용하는 것이 좋다.
+- Querydsl은 JPQL을 코드로 만들 수 있도록 도와주는 빌더 역할을 할 뿐이기에 JPQL을 잘 이해하고 있다면 금방 배울 수 있다
+
 </div>
 </details>
