@@ -660,7 +660,65 @@ public List<OrderSimpleQueryDto> findOrderDtos() {
 <summary>Section 05: API 개발 고급 - 실무 필수 최적화 OSIV</summary>
 <div markdown="1">
 
+### OSIV와 성능 최적화
+- Open Session In View: 하이버네이트에서의 엔티티매니저 역할을 하는 것을 Session이라고 한다. (View에서도 커넥션이 열려있는 상태를 암시하는 것을 알 수 있음)
+- Open EntityManager In View: JPA
+- ![img.png](img.png)
+- 어플리케이션을 실행시키면 이상한 WARN로그를 발견할 수 있다.
+  - spring.jpa.open-in-view의 default가 true임으로 api응답이 끝날 때 까지 DB커넥션을 물고 있을 수 있다라는 로그를 말하는 것
+  - 이 기본값을 뿌리면서 WARN 로그를 남기는 것은 이유가 있다.
+  - OSIV 전략은 트랜잭션 시작처럼 최초 데이터베이스 커넥션 시작지점 부터 API 응답이 끝날 때 까지 영속성 컨텍스트와 데이터베이스 커넥션을 유지한다.
+  - 그래서 지금까지 View Template이나 API 컨트롤러에서 지연 로딩이 가능했던 것이다.
+  - 지연 로딩은 영속성 컨텍스트가 살아있어야 가능하고, 영속성 컨텍스트는 기본적으로 데이터베이스 커넥션을 유지한다.
+  - 지연 로딩을 가능하게 하고 있었다니! 이것 자체가 큰 장점이라고 볼 수 있겠다
 
+### 그렇다면 OSIV는 항상 켜놓는 것이 좋을까?
+- OSIV 전략은 너무 오랜시간동안 데이터베이스 커넥션 리소스를 사용하기 때문에 실시간 트래픽이 중요한 애플리케이션에서는 커넥션이 모자를 수 있다.
+- 이것은 결국 장애로 이어진다..
+- 예를 들어서 컨트롤러에서 외부 API를 호출하면 외부 API 대기 시간 만큼 커넥션 리소스를 반환하지 못하고 유지해야 하는 것이다!
+- ![img_1.png](img_1.png)
+- OSIV를 끄면 트랜잭션을 종료할 때 영속성 컨텍스트를 닫고, 데이터베이스 커넥션도 반환한다. 따라서 커넥션 리소스를 낭비하지 않는다.
+- OSIV를 끄면 모든 지연로딩을 트랜잭션 안에서 처리해야 한다. 
+- 따라서 지금까지 작성한 많은 지연 로딩 코드를 트랜잭션 안으로 말아 넣어야 한다는 단점이 있다.
+- 그리고 view template에서 지연로딩이 동작하지 않는다. 
+- 결론적으로 트랜잭션이 끝나기 전에 지연 로딩을 강제로 호출해 두어야 한다.
+
+### 커맨드와 쿼리 분리
+- 실무에서 OSIV를 끈 상태로 복잡성을 관리하는 좋은 방법이 있다. 바로 Command와 Query를 분리하는 것이다.
+- 보통 비즈니스 로직은 특정 엔티티 몇 개를 등록하거나 수정하는 것이므로 성능이 크게 문제가 되지 않는다.
+- 그런데 복잡한 화면을 출력하기 위한 쿼리는 화면에 맞추어 성능을 최적화 하는 것이 중요하다.
+- 하지만 그 복잡성에 비해 핵심 비즈니스에 큰 영향을 주는 것은 아니다.
+- 그래서 크고 복잡한 애플리케이션을 개발한다면, 이 둘의 관심사를 명확하게 분리하는 선택은 유지보수 관점에서 충분히 의미 있다.
+- 단순하게 설명해서 다음처럼 분리하는 것이다.
+  - OrderService: 핵심 비즈니스 로직
+  - OrderQueryService: 화면이나 API에 맞춘 서비스 (주로 읽기 전용 트랜잭션 사용)
+
+```java
+
+    @GetMapping("/api/v3/orders")
+    public List<OrderDto> orderV3() {
+        List<Order> orders = orderRepository.findAllWithItem();
+
+        List<OrderDto> result = orders.stream()
+                .map(o -> new OrderDto(o))
+                .collect((toList()));
+        return result;
+    }
+
+```
+- 해당 코드를 보면 Repository에서 orders를 가져와서 stream과 lambda표현식을 이용해서 api 스펙에 맞추어 리스트를 깎고 있다.
+- 만약 OSIV가 false 이면 위의 코드는 오류를 뿜을 것임 (지연로딩을 트랜잭션 밖에서 하고 있기 때문에)
+- 위의 코드에서 api 스펙을 위해서 dto를 깎는 부분을 별도의 서비스로 두어 분리하라는 것이다
+- 분리된 Service는 트랜잭션을 따로 ReadOnly로 열면 OSIV문제에 구애받지 않게 되고 관심사의 분리도 명확하게 되는 것이다.
+
+
+</div>
+</details>
+
+
+<details>
+<summary>Section 06: 스프링 데이터 JPA와 QueryDSL 소개 </summary>
+<div markdown="1">
 
 </div>
 </details>

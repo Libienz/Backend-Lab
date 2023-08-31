@@ -33,7 +33,7 @@ public class OrderSimpleApiController {
     public List<OrderSimpleQueryDto> ordersV2() {
         List<Order> orders = orderRepository.findAllByString(new OrderSearch());
         List<OrderSimpleQueryDto> result = orders.stream()
-                .map(o -> new OrderSimpleQueryDto(o))
+                .map(o -> new OrderSimpleQueryDto(o.getId(),o.getMember().getName(),o.getOrderDate(),o.getStatus(),o.getDelivery().getAddress()))
                 .collect(Collectors.toList());
 
         return result;
@@ -43,7 +43,7 @@ public class OrderSimpleApiController {
     public List<OrderSimpleQueryDto> ordersV3() {
         List<Order> orders = orderRepository.findAllWithMemberDelivery();
         List<OrderSimpleQueryDto> result = orders.stream()
-                .map(o -> new OrderSimpleQueryDto(o))
+                .map(o -> new OrderSimpleQueryDto(o.getId(),o.getMember().getName(),o.getOrderDate(),o.getStatus(),o.getDelivery().getAddress()))
                 .collect(Collectors.toList());
 
         return result;
