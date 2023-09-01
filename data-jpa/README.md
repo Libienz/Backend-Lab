@@ -166,3 +166,53 @@ public class TeamRepository {
 
 </div>
 </details>
+
+
+<details>
+<summary>Section 04 Query Method 기능</summary></summary>
+<div markdown="1">
+
+### 스프링 데이터 JPA가 제공하는 마법 같은 기능
+- 메서드 이름으로 쿼리 생성
+- 메서드 이름으로 JPA Named Query 호출
+- @Query 어노테이션을 사용해서 리파지토리 인터페이스에 쿼리 직접 정의
+
+### 메서드 이름으로 쿼리 생성
+- 메서드 이름을 분석해서 JPQL 쿼리가 작성되고 실행된다.
+- 이름과 나이를 기준으로 회원을 조회하는 다음의 순수 JPA 리포지토리 코드를 보자
+
+```java
+
+    public List<Member> findByUsernameAndAgeGreaterThan(String username, int age) {
+        return em.createQuery("select m from Member m where m.username = :username and m.age > :age")
+                .setParameter("username", username)
+                .setParameter("age", age)
+                .getResultList();
+    }
+```
+- 쿼리를 작성하고 실행시키도록 코드를 짠 것을 볼 수 있다 
+- 다음으로 스프링 데이터 jpa에서 같은 기능을 구현한 코드를 보자
+
+```java
+   List<Member> findByUsernameAndAgeGreaterThan(String username, int age);
+
+```
+- 끝이다.. 이름만 규약에 맞게 원형을 인터페이스에 정의하면 스프링 데이터 jpa가 메서드 이름에 맞는 쿼리를 작성하고 실행하도록 해주는 것
+- 스프링 데이터 jpa는 공통 인터페이스를 구현해주는 장점도 있지만 이것처럼 특정 도메인 종속적인 기능도 얼마든지 이용할 수 있는 것이다.
+
+### 쿼리 메서드 필터 조건
+- https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#jpa.query-methods.query-creation
+
+### 스프링 데이터가 제공하는 쿼리 메서드 기능
+- 조회: find...By, read...By, query...By, get...By 
+- https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.query-methods.query-creation
+- 예) findHelloBy처럼 ...에 식별하기 위한 내용이 들어가도 된다. 
+- COUNT: count...By 반환타입 long
+- EXISTS: exists…By 반환타입 boolean
+- 삭제: delete…By, remove…By 반환타입 long
+- DISTINCT: findDistinct, findMemberDistinctBy
+- LIMIT: findFirst3, findFirst, findTop, findTop3
+
+
+</div>
+</details>
