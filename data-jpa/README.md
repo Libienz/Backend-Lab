@@ -160,5 +160,9 @@ public class TeamRepository {
 ```
 - Spring Data JPA로 똑같이 적용을 해보아도 이미 구현되어 있는 기능들이라 별 다른 수정 없이 사용 가능한 것을 확인할 수 있다.
 
+### 공통 인터페이스 분석
+- ![img_2.png](img_2.png)
+
+
 </div>
 </details>
