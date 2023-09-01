@@ -115,5 +115,14 @@ public class TeamRepository {
 - CRUD가 반복적으로 진행되고 있는 것을 알 수 있다.
 - 제네릭을 사용하면 재사용성을 늘릴 수 있을지도!?
 - Spring 데이터 jpa에서는 공통 인터페이스를 통해서 boilerplate한 코드를 삭제할 수 있도록 도와준다.
+
+### Spring Data JPA 공통 인터페이스 
+
+- Spring Data JPA를 사용하면 인터페이스를 사용하는 것만으로 CRUD 공통 인터페이스를 사용가능 하다. 어떻게 그것이 가능할까!?
+- 실제로 인터페이스를 사용할 때 class를 찍어보자
+  - memberRepository.getClass() class com.sun.proxy.$ProxyXXX
+- 스프링 jpa가 구현체를 생성하고 프록시로 제공하는 것을 확인할 수 있다
+
+
 </div>
 </details>
