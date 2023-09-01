@@ -253,5 +253,38 @@ List<Member> findByUsername(@Param("username") String username);
 - 그렇다면 주로 사용되는 방법은 무엇이냐?
 - 바로 다음에 공부할 @Query를 사용해서 리파지토리 메서드에 쿼리를 직접 정의하는 것은 namedQuery의 장점을 모두 가지면서 NamedQuery의 단점이 없기에 자주 사용된다.
 
+### @Query, 리포지토리 메서드에 쿼리 정의하기
+
+```java
+
+public interface MemberRepository extends JpaRepository<Member, Long> {
+  @Query("select m from Member m where m.username= :username and m.age = :age")
+  List<Member> findUser(@Param("username") String username, @Param("age") int age);
+}
+
+```
+- 실행할 메서드에 정적 쿼리를 직접 작성함으로 이름 없는 Named 쿼리를 적용하는 것과 같음
+- 정적 쿼리이기에 Named 쿼리처럼 어플리케이션 실행시점에 문법 오류를 발견할 수 있음
+- 실무에서는 메서드 이름으로 쿼리 생성 기능은 파라미터가 증가하면 메서드 이름이 매우 지저분해지기에 리포지토리 메서드에 쿼리를 직접 정의하는 해당방법을 가장 많이 사용한다.
+
+### @Query, 값, DTO 조회하기 
+
+### 단순히 값 하나를 조회
+
+```java
+  @Query("select m.username from Member m")
+  List<String> findUsernameList();
+```
+- JPA 값 타입(@Embedded)도 이 방식으로 조회 가능하다.
+
+### DTO로 직접 조회
+
+```java
+@Query("select new study.datajpa.dto.MemberDto(m.id, m.username, t.name) " + "from Member m join m.team t")
+List<MemberDto> findMemberDto();
+```
+
+- 주의! DTO로 직접 조회 하려면 JPA의 new 명령어를 사용해야 한다. 그리고 다음과 같이 생성자가 맞는 DTO가 필요하다.
+
 </div>
 </details>
