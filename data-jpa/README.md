@@ -123,6 +123,42 @@ public class TeamRepository {
   - memberRepository.getClass() class com.sun.proxy.$ProxyXXX
 - 스프링 jpa가 구현체를 생성하고 프록시로 제공하는 것을 확인할 수 있다
 
+### Spring Data JPA 공통 인터페이스 적용
+- 공통 인터페이스를 적용해보자
+
+```java
+    @Test
+    public void basicCRUD() throws Exception {
+
+        //given
+        Member member1 = new Member("member1");
+        Member member2 = new Member("member2");
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+        //단건 조회 검증
+        Member findMember1 = memberRepository.findById(member1.getId()).get();
+        Member findMember2 = memberRepository.findById(member2.getId()).get();
+        assertThat(findMember1).isEqualTo(member1);
+        assertThat(findMember2).isEqualTo(member2);
+
+        //리스트 조회 검증
+        List<Member> all = memberRepository.findAll();
+        assertThat(all.size()).isEqualTo(2);
+
+        //count 검증
+        long count = memberRepository.count();
+        assertThat(count).isEqualTo(2);
+
+        //삭제 검증
+        memberRepository.delete(member1);
+        memberRepository.delete(member2);
+        long deletedCount = memberRepository.count();
+        assertThat(deletedCount).isEqualTo(0);
+
+    }
+
+```
+- Spring Data JPA로 똑같이 적용을 해보아도 이미 구현되어 있는 기능들이라 별 다른 수정 없이 사용 가능한 것을 확인할 수 있다.
 
 </div>
 </details>
