@@ -213,6 +213,45 @@ public class TeamRepository {
 - DISTINCT: findDistinct, findMemberDistinctBy
 - LIMIT: findFirst3, findFirst, findTop, findTop3
 
+### JPA NamedQuery
+- JPA의 NamedQuery를 스프링 데이터 JPA에서 호출 할 수 있음
+- 먼저 순수 JPA의 Named query 사용 모습
+- 엔티티에 Named 쿼리 작성
+```java
+@NamedQuery(
+        name="Member.findByUsername",
+        query="select m from Member m where m.username = :username"
+)
+public class Member {
+  ...
+}
+```
+- JPA를 직접 사용해서 Named 쿼리 호출
+```java
+
+    public List<Member> findByUsername(String username) {
+                return em.createNamedQuery("Member.findByUsername", Member.class)
+                        .setParameter("username", username)
+                        .getResultList();
+    }
+```
+- Named 쿼리를 이용해 쿼리에 이름을 부여, 재사용성을 높였다. 
+- 또한 Named 쿼리가 정적 쿼리라는 특성을 이용 컴파일 타임에 쿼리의 정합성을 체크할 수 있도록 했다 (중요한 장점)
+- 이렇게 정의된 named 쿼리는 스프링 데이터 jpa에서 특정 메서드에서 실행될 쿼리로 설정할 수 있다
+- 스프링 데이터 jpa로 named 쿼리 호출
+```java
+@Query(name = "Member.findByUsername")
+List<Member> findByUsername(@Param("username") String username);
+
+```
+- @Query를 통해 named 쿼리를 지정해주는 모습이다
+- 사실 @Query어노테이션이 없어도 named 쿼리가 실행된다. 그 이유는 스프링 데이터 jpa에서는 findByUsername이라는 메서드를 실행할 때 먼저 Member.findByUsername이라는 named 쿼리를 찾아보기 때문
+- namedQuery가 존재하지 않는다면 메서드 이름으로 쿼리가 생성될 것이기 때문에 사실 @Query가 필요 없는 것이다.
+- 여쨋든 named 쿼리를 이용하면 쿼리에 이름을 부여해 재사용성을 높임과 동시에 정적 컴파일이 가능하다는 큰 장점이 있고 스프링 데이터 jpa에서도 사용할 수 있는 것을 확인했다
+- 그럼에도 불구하고 실무에선 namedQuery를 직접 등록해서 사용하는 일은 드물다.
+- 쿼리를 엔티티단에서 정의해야 하는 것도 그렇고 관심사의 분리가 명확하지 않은 것 때문이다.
+- 그렇다면 주로 사용되는 방법은 무엇이냐?
+- 바로 다음에 공부할 @Query를 사용해서 리파지토리 메서드에 쿼리를 직접 정의하는 것은 namedQuery의 장점을 모두 가지면서 NamedQuery의 단점이 없기에 자주 사용된다.
 
 </div>
 </details>
