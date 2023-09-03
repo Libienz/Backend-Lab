@@ -138,4 +138,18 @@ class MemberRepositoryTest {
         //then
     }
 
+    @Test
+    public void returnType() throws Exception {
+        //given
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+        //when
+        List<Member> aaa = memberRepository.findListByUsername("AAA");
+        //없으면? 빈컬렉션
+        //then
+        //then
+    }
+
 }

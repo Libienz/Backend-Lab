@@ -286,5 +286,37 @@ List<MemberDto> findMemberDto();
 
 - 주의! DTO로 직접 조회 하려면 JPA의 new 명령어를 사용해야 한다. 그리고 다음과 같이 생성자가 맞는 DTO가 필요하다.
 
+### 파라미터 바인딩
+- 위치 기반과 이름 기반중 이름 기반을 사용하자 (가독성과 유지 보수를 위해)
+
+```java
+import org.springframework.data.repository.query.Param
+public interface MemberRepository extends JpaRepository<Member, Long> {
+   @Query("select m from Member m where m.username = :name")
+   Member findMembers(@Param("name") String username);
+}
+```
+
+### 반환 타입
+
+- 스프링 데이터 JPA는 유연한 반환 타입을 지원한다.
+```java
+
+List<Member> findListByUsername(String username);
+Member findMemberByUsername(String username);
+Optional<Member> findOptionalByUsername(String username);
+```
+- 스프링 데이터 JPA 공식 문서: https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repository-query-return-types
+- 조회 결과가 많거나 없으면?
+  - 컬렉션 
+    - 결과 없음: 빈 컬렉션 반환
+  - 단건 조회
+    - 결과 없음: null 반환
+    - 결과가 2건 이상: NonUniqueResultException 예외 발생
+- 참고 : 단건으로 지정한 메서드를 호출하면 스프링 데이터 JPA는 내부에서 JPQL의 메서드를 호출한다. 
+  - 이 메서드를 초출했을 때 조회 결과가 없으면 NoResultException 예외가 발생하는데 개발자 입장에서 다루기가 상당히 불편
+  - 스프링 데이터 JPA는 단건을 조회할 때 이 예외를 한번 감싸서 null을 반환하도록 구현되어 있다.
+
+
 </div>
 </details>
