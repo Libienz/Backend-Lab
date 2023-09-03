@@ -341,6 +341,71 @@ Optional<Member> findOptionalByUsername(String username);
     }
 ```
 
+### 스프링 데이터 JPA 페이징과 정렬
+- 원래 페이징과 정렬은 고대의 선배들이 진행하던 규약같은 것이 있었는데 상당히 복잡하고 DB마다 그 형태가 다르다.
+- 스프링 데이터 JPA는 이러한 페이징과 정렬을 표준화 하여 구현을 쉽게 한다. 다음을 살펴보자
+- 페이징과 정렬 파라미터
+  - org.springframework.data.domain.Sort : 정렬 기능
+  - org.springframework.data.domain.Pageable : 페이징 기능 (내부에 Sort 포함)
+  - Sort와 Pageable 인터페이스 두개로 표준화 시킨 것이다.
+- 특별한 반환 타입
+  - org.springframework.data.domain.Page : 추가 count 쿼리 결과를 포함하는 페이징
+  - org.springframework.data.domain.Slice : 추가 count 쿼리 없이 다음 페이지만 확인 가능(내부적 으로 limit + 1조회)
+  - List (자바 컬렉션): 추가 count 쿼리 없이 결과만 반환
+
+### 페이징과 정렬을 사용하는 예제 코드
+- 검색 조건: 나이가 10살
+- 정렬 조건: 이름으로 내림차 순
+- 페이징 조건: 첫 번째 페이지, 페이지당 보여줄 데이터는 3건
+
+#### Page 사용 예제 정의 코드 
+```java
+public interface MemberRepository extends Repository<Member, Long> {
+   Page<Member> findByAge(int age, Pageable pageable);
+}
+```
+
+#### Page 사용 예제 실행 코드
+
+```java 
+@Test
+public void page() throws Exception {
+     //given
+     memberRepository.save(new Member("member1", 10));
+     memberRepository.save(new Member("member2", 10));
+     memberRepository.save(new Member("member3", 10));
+     memberRepository.save(new Member("member4", 10));
+     memberRepository.save(new Member("member5", 10));
+     //when
+     PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+     Page<Member> page = memberRepository.findByAge(10, pageRequest);
+     //then
+     List<Member> content = page.getContent(); //조회된 데이터
+     assertThat(content.size()).isEqualTo(3); //조회된 데이터 수
+     assertThat(page.getTotalElements()).isEqualTo(5); //전체 데이터 수
+     assertThat(page.getNumber()).isEqualTo(0); //페이지 번호
+     assertThat(page.getTotalPages()).isEqualTo(2); //전체 페이지 번호
+     assertThat(page.isFirst()).isTrue(); //첫번째 항목인가?
+     assertThat(page.hasNext()).isTrue(); //다음 페이지가 있는가?
+}
+```
+
+- 두 번째 파라미터로 받은 Pageable은 인터페이스다. 따라서 실제 사용할 때는 해당 인터페이스를 구현한 PageRequest 객체를 사용한다.
+- PageRequest 생성자의 첫 번째 파라미터에는 현재 페이지를, 두 번째 파라미터에는 조회할 데이터 수를 입력한다.
+- 여기에 추가로 정렬 정보도 파라미터로 사용할 수 있다. 참고로 페이지는 0부터 시작한다.
+- 참고 countQuery는 join과 함께 사용될 필요가 없다 괜히 필요없는 장신구를 단 countQuery가 나갈 수 있다는 뜻
+- count쿼리는 그래서 다음과 같이 분리 할 수 있다.
+
+```java
+@Query(value = "select m from Member m", countQuery = "select count(m.username) from Member m")
+Page<Member> findMemberAllCountBy(Pageable pageable); 
+```
+
+- 페이지를 유지하면서 엔티티를 DTO로 변환하기
+```java
+Page<Member> page = memberRepository.findByAge(10, pageRequest);
+Page<MemberDto> dtoPage = page.map(m -> new MemberDto());
+```
 
 </div>
 </details>
