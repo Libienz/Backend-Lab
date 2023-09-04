@@ -1,9 +1,10 @@
 package study.datajpa.repository;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
@@ -30,9 +31,37 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     List<Member> findByNames(@Param("names") List<String> names);
 
     List<Member> findListByUsername(String username);
+
     Member findMemberByUsername(String username);
+
     Optional<Member> findOptionalByUsername(String username);
 
     @Query(value = "select m from Member m", countQuery = "select count(m) from Member m")
     Page<Member> findByAge(int age, Pageable pageable);
+
+    @Modifying(clearAutomatically = true)
+    @Query("update Member m set m.age = m.age + 1 where m.age >= :age")
+    int bulkAgePlus(@Param("age") int age);
+
+    @Query("select m from Member m left join fetch m.team")
+    List<Member> findMemberFetchJoin();
+
+    @Override
+    @EntityGraph(attributePaths = {"team"})
+    List<Member> findAll();
+
+    //jpql에 추가적으로 엔티티 그래프를 넣어도 된다.
+    @EntityGraph(attributePaths = {"team"})
+    @Query("select m from Member m")
+    List<Member> findMemberEntityGraph();
+
+    //메서드 이름으로 생성된 jpal에도 추가할 수 있다.
+    @EntityGraph(attributePaths = ("team"))
+    List<Member> findEntityGraphByUsername(@Param("username") String username);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<Member> findLockByUsername(String username);
+
+
+
 }

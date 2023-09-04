@@ -407,5 +407,83 @@ Page<Member> page = memberRepository.findByAge(10, pageRequest);
 Page<MemberDto> dtoPage = page.map(m -> new MemberDto());
 ```
 
+### 벌크성 수정 쿼리
+- JPA를 사용한 벌크성 수정 쿼리
+
+```java
+public int bulkAgePlus(int age) {
+   int resultCount = em.createQuery(
+   "update Member m set m.age = m.age + 1" +
+   "where m.age >= :age")
+   .setParameter("age", age)
+   .executeUpdate();
+   return resultCount;
+}
+```
+
+- 스프링 데이터 JPA를 사용한 벌크성 수정 쿼리
+
+```java
+@Modifying
+@Query("update Member m set m.age = m.age + 1 where m.age >= :age")
+int bulkAgePlus(@Param("age") int age);
+```
+
+- 벌크성 수정, 삭제 쿼리는 @Modifying 어노테이션을 사용하자
+  - 사용하지 않으면 예외가 터진다. 
+- 벌크성 쿼리를 실행하고 나서는 꼭 영속성 컨텍스트를 초기화하자
+  - 벌크성 쿼리를 실행하고 나서 영속성 컨텍스트를 초기화 하지 않으면 영속성 컨텍스트에 과거 값이 남아서 문제가 될 수 있다.
+  - @Modifying(clearAutomatically)을 통해 영속성 컨텍스트를 초기화 하자
+
+### EntityGraph
+- 연관된 엔티티들ㅇ르 SQL 한번에 조회하는 방법
+- member -> team은 지연로딩 관계이다. 따라서 N+1문제가 있다
+- 연관된 엔티티를 한번에 조회하려면 페치 조인이 필요하다
+```java
+@Query("select m from Member m left join fetch m.team")
+List<Member> findMemberFetchJoin();
+```
+- 스프링 데이터 JPA는 JPA가 제공하는 엔티티 그래프 기능을 편리하게 사용하게 도와준다. 
+- 이기능을 사용하면 JPQL없이 페치 조인을 사용할 수 있다. 
+
+```java
+//공통 메서드 오버라이드
+@Override
+@EntityGraph(attributePaths = {"team"})
+List<Member> findAll();
+//JPQL + 엔티티 그래프
+@EntityGraph(attributePaths = {"team"})
+@Query("select m from Member m")
+List<Member> findMemberEntityGraph();
+//메서드 이름으로 쿼리에서 특히 편리하다.
+@EntityGraph(attributePaths = {"team"})
+List<Member> findByUsername(String username)
+```
+- 엔티티 그래프는 사실상 페치 조인의 간편 버전
+
+### JPA Hint & Lock
+- JPA 쿼리 힌트: SQL 힌트가 아님 JPA 구현체 하이버네이트에게 제공하는 힌트
+- 주로 변경 감지를 위한 스냅샷 관리를 막기 위한 용도로 사용된다.
+
+```java
+@QueryHints(value = @QueryHint(name = "org.hibernate.readOnly", value =
+"true"))
+Member findReadOnlyByUsername(String username);
+```
+- Lock: JPA가 제공하는 Lock 사용법 
+
+```java
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+List<Member> findByUsername(String name);
+```
+</div>
+</details>
+
+
+<details>
+<summary>Section 05 확장 기능</summary></summary>
+<div markdown="1">
+
+
 </div>
 </details>
