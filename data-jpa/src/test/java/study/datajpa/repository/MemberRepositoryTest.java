@@ -6,10 +6,7 @@ import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.datajpa.dto.MemberDto;
@@ -233,4 +230,67 @@ class MemberRepositoryTest {
         }
         //then
      }
+
+     @Test
+     public void queryByExample() throws Exception {
+         //given
+         Team teamA = new Team("teamA");
+         em.persist(teamA);
+
+         Member m1 = new Member("m1", 0, teamA);
+         Member m2 = new Member("m2", 0, teamA);
+         em.persist(m1);
+         em.persist(m2);
+
+         em.flush();
+         em.clear();
+         //when
+         Member member = new Member("m1");
+         ExampleMatcher.matching()
+                 .withIgnoreCase("abe");
+         Example<Member> example = Example.of(member);
+
+         memberRepository.findAll(example);
+         //then
+      }
+
+    @Test
+    public void projections() throws Exception {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+        //when
+        List<UsernameOnlyDto> result = memberRepository.findProjectionsByUsername("m1");
+        for (UsernameOnlyDto usernameOnly : result) {
+            System.out.println("usernameOnly = " + usernameOnly);
+        }
+        //then
+    }
+
+    @Test
+    public void nativeQuery() throws Exception {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+        //when
+        Member result = memberRepository.findByNativeQuery("m1");
+        System.out.println("result = " + result);
+        //then
+    }
 }

@@ -754,9 +754,120 @@ public class Item implements Persistable<String> {
   - 참고로 등록시간(@CreatedDate)을 조합해서 사용하면 이 필드로 새로운 엔티티 여부를 편리하게 확인할 수 있다 
 
 <details>
-<summary>Section 07</summary></summary>
+<summary>Section 07 나머지 기능들</summary></summary>
 <div markdown="1">
 
+### 명세 (Specification)
+- 스프링 데이터 JPA는 JPA Criteria를 활용해서 명세라는 개념을 사용할 수 있도록 지원
+- Composite 패턴을 이용해서 검색조건을 동적으로 빌드할 수 있으나 실무에서는 복잡성 때문에 JPA Cirteria를 거의 안쓴다.
+- QueryDSL을 사용하자
+
+### Query By Example
+
+
+```java
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.transaction.annotation.Transactional;
+import study.datajpa.entity.Member;
+import study.datajpa.entity.Team;
+import javax.persistence.EntityManager;
+import java.util.List;
+import static org.assertj.core.api.Assertions.*;
+@SpringBootTest
+@Transactional
+public class QueryByExampleTest {
+ @Autowired MemberRepository memberRepository;
+ @Autowired EntityManager em;
+ @Test
+ public void basic() throws Exception {
+ //given
+ Team teamA = new Team("teamA");
+ em.persist(teamA);
+ em.persist(new Member("m1", 0, teamA));
+ em.persist(new Member("m2", 0, teamA));
+ em.flush();
+ //when
+ //Probe 생성
+ Member member = new Member("m1");
+ Team team = new Team("teamA"); //내부조인으로 teamA 가능
+ member.setTeam(team);
+ //ExampleMatcher 생성, age 프로퍼티는 무시
+ ExampleMatcher matcher = ExampleMatcher.matching()
+ .withIgnorePaths("age");
+ Example<Member> example = Example.of(member, matcher);
+ List<Member> result = memberRepository.findAll(example);
+ //then
+ assertThat(result.size()).isEqualTo(1);
+ }
+}
+```
+- Probe: 필드에 데이터가 있는 실제 도메인 객체
+- ExampleMatcher: 특정 필드를 일치시키는 상세한 정보 제공
+- Example: Probe와 ExampleMatcher로 구성, 쿼리를 생성하는 데 사용
+
+- 장점
+  - 동적 쿼리를 편리하게 처리
+  - 도메인 객체를 그대로 사용
+  - 데이터 저장소를 RDB에서 NOSQL로 변경해도 코드 변경이 없게 추상화 되어 있음
+  - 스프링 데이터 JPA JpaRepository인터페이스에 이미 포함
+- 단점
+  - 조인은 가능하지만 내부 조인만 가능함, 외부 조인 안됨
+  - 다음과 같은 중첩 제약조건 안됨
+    - firstname = ?0 or (firstname = ?1 and lastname =?2)
+  - 단순한 매칭 조건만 지원
+- 결론 QueryDSL을 사용하자 
+
+### Projections
+- 엔티티 대신에 DTO를 편리하게 조회할 때 사용
+- 전체 엔티티가 필요 없고 회원 이름만 딱 조회하고 싶으면 Projection기능을 사용할 수 있다.
+
+```java
+public interface UsernameOnly {
+ String getUsername();
+}
+```
+
+```java
+public interface MemberRepository ... {
+ List<UsernameOnly> findProjectionsByUsername(String username);
+}
+```
+- 인터페이스 기반의 Closed Projections가 위에 사용된 방식이다
+- 프로퍼티 형식(getter)의 인터페이스를 제공하면 구현체는 스프링 데이터 JPA가 제공한다. 
+- 다음과 같이 스프링의 SpEL 문법도 지원한다.
+
+```java
+public interface UsernameOnly {
+ @Value("#{target.username + ' ' + target.age + ' ' + target.team.name}")
+ String getUsername();
+}
+```
+- 단 이렇게 SpEL문법을 사용하면 DB에서 엔티티 필드를 다 조회해온 다음에 계산하기에 SELECT 절 최적화가 안된다.
+
+### 클래스 기반 Projection
+- 다음과 같이 인터페이스가 아닌 구체적인 DTO 형식도 가능
+- 생성자의 파라미터 이름으로 매칭
+
+```java
+public class UsernameOnlyDto {
+ private final String username;
+ public UsernameOnlyDto(String username) {
+ this.username = username;
+ }
+ public String getUsername() {
+ return username;
+ }
+}
+```
+- 주의
+  - 프로젝션 대상이 root 엔티티면, JPQL SELECT절 최적화가 가능하지만
+  - 프로젝션 대상이 root가 아니면
+    - LEFT OUTER JOIN 처리가 된다.
+    - 모든 필드를 SELECT해서 엔티티로 조회한 다음에 계산되는 것이다
 
 </div>
 </details>
