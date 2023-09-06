@@ -1,12 +1,7 @@
 package study.querydsl.entity;
 
-import jakarta.persistence.Access;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +11,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Team {
+    @Id @GeneratedValue
+    @Column(name = "team_id")
     private Long id;
     private String name;
 
