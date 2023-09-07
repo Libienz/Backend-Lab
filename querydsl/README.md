@@ -461,5 +461,182 @@ member.username.startsWith("member") //like ‘member%’ 검색
 
 ```
 
+### 서브 쿼리
+
+```java 
+    /**
+     * 나이가 가장 많은 회원 조회
+     * @throws Exception
+     */
+    @Test
+    public void subQuery() throws Exception {
+        QMember memberSub = new QMember("memberSub");
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.eq(select(memberSub.age.max())
+                        .from(memberSub)
+                ))
+                .fetch();
+
+        assertThat(result).extracting("age")
+                .containsExactly(40);
+
+    }
+
+
+    /**
+     * 나이가 평균 이상인 회원 조회
+     * @throws Exception
+     */
+    @Test
+    public void subQueryGoe() throws Exception {
+        QMember memberSub = new QMember("memberSub");
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.goe(select(memberSub.age.avg())
+                        .from(memberSub)
+                ))
+                .fetch();
+
+        assertThat(result).extracting("age")
+                .containsExactly(30, 40);
+
+    }
+
+
+
+    @Test
+    public void subQueryIn() throws Exception {
+        QMember memberSub = new QMember("memberSub");
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.in(
+                        select(memberSub.age)
+                                .from(memberSub)
+                                .where(memberSub.age.gt(10))
+                ))
+                .fetch();
+
+        assertThat(result).extracting("age")
+                .containsExactly(20, 30, 40);
+
+    }
+
+    @Test
+    public void selectSubQuery() throws Exception {
+
+        QMember memberSub = new QMember("memberSub");
+        List<Tuple> result = queryFactory
+                .select(member.username,
+                        select(memberSub.age.avg())
+                                .from(memberSub))
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+    }
+
+```
+- from절의 서브 쿼리 한계
+  - JPA JPQL 서브쿼리의 한계점으로 form 절의 서브쿼리는 지원하지 않는다.
+  - 당연히 Querydsl도 지원하지 않는다.
+  - 하이버네이트 구현체를 사용하면 select 절의 서브쿼리는 지웒나다.
+  - querydsl도 하이버네이트 구현체를 사용하면 select절의 서브쿼리를 지원한다.
+- from절의 서브 쿼리 해결방안
+  - 서브쿼리를 join으로 변경한다. (가능한 상황도 있고 불가능한 상황도 있다)
+  - 애플리케이션에서 쿼리를 2번 분리해서 실행한다
+  - nativeSQL을 사용한다.
+  - 그런데 DB에게 어디까지 일을 시켜야 될 지 한번 고민해봐라
+  - 복잡한 서브쿼리가 필요한 경우 그냥 애플리케이션에서 처리하는 것이 더 효율적일 수 있기 때문이다
+
+### Case문
+
+```java
+
+    @Test
+    public void basicCase() throws Exception {
+
+        List<String> result = queryFactory
+                .select(member.age
+                        .when(10).then("열살")
+                        .when(20).then("스무살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
+
+    @Test
+    public void complexCase() throws Exception {
+
+        List<String> res = queryFactory
+                .select(new CaseBuilder()
+                        .when(member.age.between(0, 20)).then("0~20살")
+                        .when(member.age.between(21, 30)).then("21~30살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+        for (String re : res) {
+            System.out.println("re = " + re);
+        }
+    }
+```
+
+### 상수, 문자 더하기
+
+```java
+
+    @Test
+    public void constant() throws Exception {
+        List<Tuple> result = queryFactory
+                .select(member.username, Expressions.constant("A"))
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+    }
+
+    @Test
+    public void concat() throws Exception {
+        List<String> result = queryFactory
+                .select(member.username.concat("_").concat(member.age.stringValue()))
+                .from(member)
+                .where(member.username.eq("member1"))
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
+```
+
+
+</div>
+</details>
+
+
+<details>
+<summary>Section 04 중급 문법 </summary></summary>
+<div markdown="1">
+
+
+
+</div>
+</details>
+
+
+
+<details>
+<summary>Section 04 순수 JPA와 Querydsl </summary></summary>
+<div markdown="1">
+
+
+
 </div>
 </details>
