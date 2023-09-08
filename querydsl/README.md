@@ -749,5 +749,136 @@ member.username.startsWith("member") //like ‘member%’ 검색
     }
 
 ```
+
+### 프로젝션과 결과 반환 - @QueryProjection
+
+- 생성자 + @QueryProjection
+- 이 방법은 Dto를 Q타입으로 생성하여 컴파일러로 하여금 정적 타입체크를 가능하게 한다
+- typeSafe 하게 하는 것!
+  - 기존의 생성자에 파라미터를 할당하는 것은 runTime에 오류를 잡아낸다
+- 다만 DTO에 QueryDSL 어노테이션을 유지해야 함으로 DTO가 querydsl에 의존하게 된다는 단점이 있다 또한 q파일을 별도 생성해야 하는 단점도 있음
+
+```java
+
+    @Test
+    public void findDtoByQueryProjection() throws Exception {
+
+        List<MemberDto> result = queryFactory
+                .select(new QMemberDto(member.username, member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+```
+
+### 동적 쿼리 - BooleanBuilder 사용
+- 동적 쿼리를 해결하는 두가지 방식 중 BooleanBuilder를 사용하는 방식을 알아보자
+- Builder의 체인메서드 형태로 동적으로 표현식을 덧붙일 수 있다
+
+```java     
+    @Test
+    public void dynamicQuery_BoleeanBuilder() throws Exception {
+
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+        List<Member> members = searchMember1(usernameParam, ageParam);
+        assertThat(members.size()).isEqualTo(1);
+    }
+
+    private List<Member> searchMember1(String usernameCond, Integer ageCond) {
+        BooleanBuilder builder = new BooleanBuilder();
+        if (usernameCond != null) {
+            builder.and(member.username.eq(usernameCond));
+        }
+        if (ageCond != null) {
+            builder.and(member.age.eq(ageCond));
+        }
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(builder)
+                .fetch();
+        return result;
+    }
+
+   
+```
+
+### 동적 쿼리 - Where 다중 파라미터 사용
+- where 조건에 null 값이 무시된다는 특성을 이용한 동적쿼리 빌드 방법이다
+- 메서드를 다른 쿼리에서도 재활용 할 수 있으며 가독성이 높아진다
+
+```java
+
+    @Test
+    public void dynamicQuery_WhereParam() throws Exception {
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+        List<Member> members = searchMember2(usernameParam, ageParam);
+        assertThat(members.size()).isEqualTo(1);
+     }
+
+    private List<Member> searchMember2(String usernameCond, Integer ageCond) {
+        return queryFactory
+                .selectFrom(member)
+                .where(usernameEq(usernameCond), ageEq(ageCond))
+                .fetch();
+    }
+
+```
+
+
+### 수정, 삭제 벌크 연산
+
+- 쿼리 한번으로 대량 데이터 수정
+- 벌크연선은 영속성 컨텍스트에 있는 엔티티를 무시하고 곧장 실행되기에 상태를 맞추기 위해서 영속성 컨텍스트를 명시적으로 초기화하자
+
+```java
+
+
+    @Test
+    public void bulkUpdate() throws Exception {
+
+        long count = queryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+
+
+        em.flush();
+        em.clear();
+
+    }
+
+
+```
+
+### SQL function 호출하기
+- SQL function은 JPA와 같이 Dialect에 등록된 내용만 호출할 수 있다
+- member -> M으로 변경하는 replace 함수 사용
+
+```java
+
+String result = queryFactory
+ .select(Expressions.stringTemplate("function('replace', {0}, {1}, 
+{2})", member.username, "member", "M"))
+ .from(member)
+ .fetchFirst();
+
+```
+
+- 소문자로 변경해서 비교
+
+```java
+.select(member.username)
+.from(member)
+.where(member.username.eq(Expressions.stringTemplate("function('lower', {0})",
+member.username)))
+
+```
 </div>
 </details>
