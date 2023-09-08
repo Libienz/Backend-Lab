@@ -633,10 +633,121 @@ member.username.startsWith("member") //like ‘member%’ 검색
 
 
 <details>
-<summary>Section 04 순수 JPA와 Querydsl </summary></summary>
+<summary>Section 05 순수 JPA와 Querydsl </summary></summary>
 <div markdown="1">
 
+### 프로젝션 결과 반환 - 기본
+
+- 프로젝션 대상이 하나
+- 프로젝션 대상이 하나면 타입을 명확하게 지정할 수 있음
+
+```java
+
+    @Test
+    public void simpleProjection() throws Exception {
+        List<String> result = queryFactory
+                .select(member.username)
+                .from(member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
+```
+
+- 프로젝션 대상이 둘 이상 
+- 튜플 조회
+
+```java
 
 
+    @Test
+    public void tupleProjection() throws Exception {
+        List<Tuple> result = queryFactory
+                .select(member.username, member.age)
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : result) {
+            String username = tuple.get(member.username);
+            Integer age = tuple.get(member.age);
+            System.out.println("username = " + username);
+            System.out.println("age = " + age);
+        }
+    }
+
+
+```
+
+- 프로젝션과 결과 반환 - DTO 조회 (순수 JPA)
+- 순수 JPA에서 DTO로 조회할 때는 new 명령어를 사용해야 함
+- DTO의 package이름을 다 적어줘야해서 지저분함
+- 생성자 방식만 지원함
+
+```java
+
+
+    @Test
+    public void findDto() throws Exception {
+        List<MemberDto> result = em.createQuery("select new study.querydsl.dto.MemberDto(m.username, m.age) from Member m", MemberDto.class)
+                .getResultList();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+```
+
+- Querydsl 빈 생성
+- 결과를 DTO 반환할 때 사용
+- 3가지 방법이 있다.
+- 첫번째 프로퍼티 접근 by Setter
+
+```java
+    @Test
+    public void findDtoBySetter() throws Exception {
+        List<MemberDto> result = queryFactory
+                .select(Projections.bean(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+```
+- 필드 직접 접근
+
+```java
+
+    List<MemberDto> result = queryFactory
+        .select(Projections.fields(MemberDto.class,member.username,member.age))
+        .from(member)
+        .fetch();
+```
+- 생성자 사용
+
+```java
+
+    @Test
+    public void findDtoByConstructor() throws Exception {
+        List<MemberDto> result = queryFactory
+                .select(Projections.constructor(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+```
 </div>
 </details>
