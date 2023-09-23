@@ -894,6 +894,49 @@ public class ResponseBodyController {
 - @Controller 대신에 @RestController애노테이션을 사용하면 해당 컨트롤러에 모두 @ResponseBody가 적용되는 효과가 있다
 - 따라서 뷰 템플릿을 사용하는 것이 아니라 HTTP 메시지 바디에 직접 데이터를 입력한다.
 - 이름 그대로 Rest API(HTTP API)를 만들 때 사용하는 컨트롤러이다.
-- 
+
+## HTTP 메시지 컨버터
+- 뷰 템플릿으로 HTML을 생성해서 응답하는 것이 아니라, HTTP API처럼 JSON 데이터를 HTTP 메시지 바디에 직접 쓰거나 읽는 경우 HTTP 메시지 컨버터가 사용된다.
+- ![img.png](img.png)
+- @ResponseBody를 사용하는 경우 HTTP의 BODY에 문자 내용을 직접 반환
+- viewResolver 대신에 HttpMessageConverter가 동작
+- 기본 문자 처리는 StringHttpMessageConverter
+- 기본 객체 처리는 MappingJackson2HttpMessageConverter
+- byte[] 처리 등등 여러 기타 HttpMessageConverter가 기본으로 등록되어 있음
+- 참고: 응답의 경우 클라이언트의 HTTP Accept 헤더와 서버 컨트롤러 반환 타입 정보 둘을 조합해서 HttpMessageConverter가 선택된다.
+
+### 스프링 MVC는 다음의 경우에 HTTP 메시지 컨버터를 적용한다.
+- HTTP 요청: @RequestBody, HttpEntity(RequestEntity)
+- HTTP 응답: @ResponseBody, HttpEntity(ResponseEntity)
+- HTTP 메시지 컨버터는 HTTP 요청, HTTP 응답 둘 다 필요한 경우 사용된다.
+- canRead(), canWrite(): 메시지 컨버터가 해당 클래스, 미디어 타입을 지원하는 지 체크
+- read(), write(): 메시지 컨버터를 통해서 읽고 쓰는 기능
+
+### 스프링 부트 기본 메시지 컨버터
+- ByteArrayHttpMessageConverter
+- StringHttpMessageConverter
+- MappingJackson2HttpMessageConverter
+- 스프링 부트는 다양한 메시지 컨버터를 제공하는데, 대상 클래스 타입과 미디어 타입 둘을 체크해서 사용 여부를 결정한다
+- 만약 만족하지 않으면 다음 메시지 컨버터로 우선순위가 넘어간다.
+
+### HTTP 요청 데이터 읽기
+- HTTP 요청이 오고, 컨트롤러에서 @RequestBody, HttpEntity 파라미터를 사용한다.
+- 메시지 컨버터가 메시지를 읽을 수 있는지 확인하기 위해 canRead()를 호출한다. 
+  - 대상 클래스 타입을 지원하는가
+    - @RequestBody의 대상 클래스 (byte[], String, HelloData)
+  - HTTP 요청의 Content-Type 미디어 타입을 지원하는가
+    - text/plain, application/json, */*
+- canRead()조건을 만족하면 read()를 호출해서 객체 생성하고 반환한다.
+
+### 예시 
+```java
+//content-type: application/json
+@RequestMapping
+void hello(@RequestBody HelloData data) {}
+```
+- 위의 메서드가 매핑이 되어 실행되었다고 생각해보자 
+- 요청을 파싱하는 경우에 파라미터가 객체이기에 MappingJackson2HttpMessageConverter가 다른 컨버터들의 순차적인 검증을 거친 후에 선택됨
+- 컨버터가 json을 객체로 변환!
+
 </div>
 </details>
