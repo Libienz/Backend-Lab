@@ -1,7 +1,7 @@
 # Spring_MVC1_Lab1
 
 <details>
-<summary>05 Spring MVC 기본 기능 </summary>
+<summary>Section 06 Spring MVC 기본 기능 </summary>
 <div markdown="1">
 
 ## 프로젝트 생성
@@ -750,8 +750,71 @@ public class RequestBodyJsonController {
   - @ResponseBody 응답
     - 객체 -> HTTP 메시지 컨버터 -> JSON 응답
 
+## HTTP 응답 - 정적 리소스, 뷰 템플릿
+- 스프링에서 응답 데이터를 만드는 방법은 다음 3가지
+  - 정적 리소스
+    - 웹 브라우저에 정적인 리소스 제공 
+  - 뷰템플릿 사용
+    - 웹 브라우저에 동적인 HTML 제공
+  - HTTP 메시지 사용
+    - HTTP API를 제공하는 경우에는 HTML이 아닌 데이터 전달
+    - 주로 JSON 형식으로 데이터를 실어 보낸다.
 
+### 정적 리소스 
+- 스프링 부트는 클래스패스의 다음 디렉토리에 위치한 정적 리소스를 제공한다.
+- /src/main/resources/static
+- 만약 src/main/resources/static/basic/hello-form.html에 정적 파일이 들어있으면 다음의 요청과 같이 실행하면 GET할 수 있다.
+- http://localhost:8080/basic/hello-form.html
+- 정적 리소스는 해당 파일을 변경 없이 그대로 서비스 한다.
 
+### 뷰템플릿
+- 뷰 템플릿을 거쳐서 HTML이 생성되고 뷰가 응답을 만들어 전달한다.
+- 일반적으로 HTML을 동적으로 생성하는 용도로 사용 but 다른 것들도 가능하긴 하다. (뷰 템플릿이 만들 수 있는 것이라면 다 가능)
+- 스프링 부트에서는 기본 뷰 템플릿 경로가 다음과 같다
+- src/main/resources/templates
+- 뷰 템플릿을 호출하는 컨트롤러를 살펴보자
+
+```java
+package hello.springmvc.basic.response;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+@Slf4j
+@Controller
+public class ResponseViewController {
+
+    @RequestMapping("/response-view-v1")
+    public ModelAndView responseViewV1() {
+        ModelAndView mav = new ModelAndView("response/hello")
+                .addObject("data", "hello!");
+        return mav;
+    }
+
+    @RequestMapping("/response-view-v2")
+    public String responseViewV1(Model model) {
+        model.addAttribute("data", "hello!");
+        return "response/hello";
+    }
+
+    @RequestMapping("/response/hello")
+    public void responseViewV3(Model model) {
+        model.addAttribute("data", "hello!");
+    }
+}
+
+```
+### String을 반환하는 경우 - View or HTTP 메시지
+- @ResponseBody가 없으면 String 형태로 반환된 response/hello로 뷰 리졸버가 실행되어서 뷰를 찾고 렌더링한다.
+- @ResponseBody가 있으면 뷰 리졸버를 실행하지 않고 HTTP 메시지 바디에 직접 문자를 입력한다.
+- 여기서는 뷰의 논리 이름인 response/hello를 반환하면 반환된 경로의 뷰템플릿이 렌더링 되는 것을 확인할 수 있다.
+
+### void를 반환하는 경우
+- RequestMapping에 경로를 명시하고 void를 반환해도 기대하던 동작을 이끌 수 있다
+- 하지만 이 방식은 명시성이 너무 떨어지고 조건이 딱 맞는 경우가 많이 없어 권장하지 않음
 
 </div>
 </details>
