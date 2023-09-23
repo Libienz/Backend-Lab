@@ -938,5 +938,19 @@ void hello(@RequestBody HelloData data) {}
 - 요청을 파싱하는 경우에 파라미터가 객체이기에 MappingJackson2HttpMessageConverter가 다른 컨버터들의 순차적인 검증을 거친 후에 선택됨
 - 컨버터가 json을 객체로 변환!
 
+### 요청 매핑 핸들러 어댑터 구조
+
+- HTTP 메시지 컨버터는 스프링 MVC의 과정 중 언제 사용되는 것일까
+- ![img_1.png](img_1.png)
+- 정답은 핸들러 어댑터이다.
+- 핸들러 어댑터는 핸들러를 호출하며 파라미터를 전달하고 핸들러가 리턴한 것을 받아야 하는데 이 때 HTTP 메시지 컨버터가 사용되는 것이다
+
+### RequestMappingHandlerAdapter 동작 방식
+- ![img_2.png](img_2.png)
+- ArgumentResolver가 핸들러를 호출하기 전 동작하여 파라미터를 resolve하고 핸들러에 넘긴다
+- 해당 argumentResolver가 파라미터를 resolve할 때 HTTP 메시지 컨버터가 동작하는 것이다
+- ![img_3.png](img_3.png)
+
+
 </div>
 </details>
