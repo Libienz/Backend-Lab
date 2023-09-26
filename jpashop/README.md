@@ -72,7 +72,7 @@ public class MemberService {
 - 수정은 변경감지를 이용하라고 했다!
 
 ### 회원 조회 API V1
-- 회원조회 API V1을 살펴보자
+- 회원조회 API V1을 살펴보자 
 ```java
  @GetMapping("/api/v1/members")
  public List<Member> membersV1() {
