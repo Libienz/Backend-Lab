@@ -68,7 +68,7 @@ public class BasicItemController {
     }
 
 
-    @PostMapping("/add")
+//    @PostMapping("/add")
     public String addItemV4(Item item) {
 
         // Item -> item으로 모델 이름을 가정한다
@@ -76,6 +76,16 @@ public class BasicItemController {
         itemRepository.save(item);
 //        model.addAttribute("item", item); // 자동으로 추가된다 by @ModelAttribute
         return "basic/item";
+    }
+
+    @PostMapping("/add")
+    public String addItemV5(Item item) {
+
+        // Item -> item으로 모델 이름을 가정한다
+        // HelloData -> helloData
+        itemRepository.save(item);
+//        model.addAttribute("item", item); // 자동으로 추가된다 by @ModelAttribute
+        return "redirect:/basic/items/" + item.getId();
     }
 
     @GetMapping("/{itemId}/edit")
