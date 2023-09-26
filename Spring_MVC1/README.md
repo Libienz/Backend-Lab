@@ -5,7 +5,7 @@
 <summary>00 웹 어플리케이션에 대한 이해 </summary>
 <div markdown="1">
 
-## 웹 서버 (Web Server)
+## 웹 서버 (Web Server) 
 
 - http 기반 동작
 - 정적 리소스 제공, 기타 부가기능
