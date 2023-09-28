@@ -134,5 +134,139 @@ public class BasicController {
 - 타임리프 유틸리티 객체들
 - ![img_5.png](img_5.png)
 - 필요할때 레퍼런스를 참고해서 사용하도록 하자
+
+### URL 링크
+- 타임리프에서 URL을 생성할 때는 ```@{...}```문법을 사용하면 된다.
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<h1>URL 링크</h1>
+<ul>
+  <li><a th:href="@{/hello}">basic url</a></li>
+  <li><a th:href="@{/hello(param1=${param1}, param2=${param2})}">hello query
+    param</a></li>
+  <li><a th:href="@{/hello/{param1}/{param2}(param1=${param1}, param2=$
+{param2})}">path variable</a></li>
+  <li><a th:href="@{/hello/{param1}(param1=${param1}, param2=$
+{param2})}">path variable + query parameter</a></li>
+</ul>
+</body>
+</html>
+```
+- 단순한 URL
+  - ```@{/hello} -> /hello```
+- 쿼리파라미터 
+  - ```@{/hello(param1=${param1}, param2=${param2})}```
+  - ()에 있는 부분은 쿼리파라미터로 처리된다. 
+- 경로 변수
+  - ```@{/hello/{param1}/{param2}(param1=${param1}, param2=${param2})}```
+  - URL 경로상에 변수가 있으면 ()부분은 경로 변수로 처리된다. 
+- 경로 변수 + 쿼리 파라미터 
+  - ```@{/hello/{param1}(param1=${param1}, param2=${param2})}```
+  - 경로 변수와 쿼리파라미터를 함께 사용할 수 있다. 
+
+### 리터럴
+- 리터럴은 소스 코드상에 고정된 값을 말하는 용어이다.
+- 타임리프는 다음과 같은 리터럴이 있다
+  - 문자: 'hello'
+  - 숫자: 10
+  - 불린: true, false
+  - null: null
+
+- 타임리프에서 문자 리터럴은 항상 작은 따옴표로 감싸야 한다
+  - ```<span th:text="'hello'">```
+- 그런데 문자를 항상 감싸는 것은 귀찮은 일이다
+- 공백 없이 쭉 이어진다면 하나의 의미있는 토큰으로 인지하기에 작은 따옴표를 생략해도 괜찮다
+
+### 연산
+- 타임리프 연산은 자바와 크게 다르지 않다. 
+- HTML안에서 사용하기 때문에 HTML 엔티티를 사용하는 부분만 주의하자
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<ul>
+  <li>산술 연산
+    <ul>
+      <li>10 + 2 = <span th:text="10 + 2"></span></li>
+      <li>10 % 2 == 0 = <span th:text="10 % 2 == 0"></span></li>
+    </ul>
+  </li>
+  <li>비교 연산
+    <ul>
+      <li>1 > 10 = <span th:text="1 &gt; 10"></span></li>
+      <li>1 gt 10 = <span th:text="1 gt 10"></span></li>
+      <li>1 >= 10 = <span th:text="1 >= 10"></span></li>
+      <li>1 ge 10 = <span th:text="1 ge 10"></span></li>
+      <li>1 == 10 = <span th:text="1 == 10"></span></li>
+      <li>1 != 10 = <span th:text="1 != 10"></span></li>
+    </ul>
+  </li>
+  <li>조건식
+    <ul>
+      <li>(10 % 2 == 0)? '짝수':'홀수' = <span th:text="(10 % 2 == 0)? 
+'짝수':'홀수'"></span></li>
+    </ul>
+  </li>
+  <li>Elvis 연산자
+    <ul>
+      <li>${data}?: '데이터가 없습니다.' = <span th:text="${data}?: '데이터가
+없습니다.'"></span></li>
+      <li>${nullData}?: '데이터가 없습니다.' = <span th:text="${nullData}?: 
+'데이터가 없습니다.'"></span></li>
+    </ul>
+  </li>
+  <li>No-Operation
+    <ul>
+      <li>${data}?: _ = <span th:text="${data}?: _">데이터가 없습니다.</
+        span></li>
+      <li>${nullData}?: _ = <span th:text="${nullData}?: _">데이터가
+없습니다.</span></li>
+    </ul>
+  </li>
+</ul>
+</body>
+</html>
+```
+- 비교연산: HTML 엔티티를 사용해야 하는 부분을 주의하자
+  - ![img_6.png](img_6.png)
+- 조건식: 자바의 조건식과 유사
+- Elvis 연산자: 조건식의 편의 버전
+- No-Operation: _인 경우 마치 타임리프가 실행되지 않는 것처럼 동작한다 이것을 잘 사용하면 HTML의 내용 그대로 활용할 수 있다
+
+### 속성 값 설정
+- 타임리프는 주로 HTML 태그에 th:* 속성을 지정하는 방식으로 동작한다.
+- 이를 통해 기존 속성을 대체하도록 할 수 있다.
+- ```th:attrappend```를 통하면 속성 값의 뒤에 값을 추가할 수도 있고
+- ```th:attrprepend```를 통하면 속성 값의 앞에 값을 추가할 수도 있다
+- ```th:classappend```를 이용하면 class 속성에 자연스럽게 추가한다
+
+
+### 반복 
+- 타임리프에서 반복은 th:each를 사용한다.
+- 추가로 반복에서 사용할 수 있는 여러 상태 값을 지원한다
+
+#### 반복 기능
+- ```<tr th:each="user : ${users}">```
+  - 반복시 오른쪽 컬렉션의 값을 하나씩 꺼내서 왼쪽 변수에 담아 태크를 반복 실행한다
+  - tr:each는 List뿐만 아니라 Iterable, Enumertation을 구현한 모든 객체에 사용할 수 있다
+
+#### 반복 상태 유지
+- 반복의 두번째 파라미터를 설정해서 반복의 상태를 확인할 수 있다
+- ```<tr th:each="user, userStat : ${users}">```
+- 두번째 파라미터는 생략가능한데 생략하면 지정한 변수명 + Stat으로 사용하면 된다
+- ![img_7.png](img_7.png)
+
 </div>
 </details>
