@@ -378,6 +378,65 @@ public class BasicController {
   - 다음과 같이 파라미터를 전달해서 동적으로 조각을 렌더링 할 수도 있다.
   - ```<div th:replace="~{template/fragment/footer :: copyParam ('데이터1', '데이터2')}"></div>```
 
+### 템플릿 레이아웃1
+- 이전에는 일부 코드 조각을 가지고와서 사용했다면, 이번에는 개념을 더 확장해서 코드 조각을 레이아웃에 넘겨서 사용하는 방법에 대해서 알아보자
+- 예를 들어서 ```<head>```에 공통으로 사용하는 css, javascript 같은 정보들을 모아놓고 각 페이지마다 필요한 정보를 더 추가해서 사용하고 싶은 경우 템플릿 레이아웃을 사용할 수 있다.
+
+#### base.html
+```html
+
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="common_header(title,links)">
+    <title th:replace="${title}">레이아웃 타이틀</title>
+    <!-- 공통 -->
+    <link rel="stylesheet" type="text/css" media="all" th:href="@{/css/awesomeapp.css}">
+    <link rel="shortcut icon" th:href="@{/images/favicon.ico}">
+    <script type="text/javascript" th:src="@{/sh/scripts/codebase.js}"></script>
+ <!-- 추가 -->
+ <th:block th:replace="${links}" />
+</head>
+```
+
+#### layoutMain.html
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="template/layout/base :: common_header(~{::title},~{::link})">
+    <title>메인 타이틀</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/themes/smoothness/jquery-ui.css}">
+</head>
+<body>
+메인 컨텐츠
+</body>
+</html>
+
+```
+
+#### 결과
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>메인 타이틀</title>
+<!-- 공통 -->
+<link rel="stylesheet" type="text/css" media="all" href="/css/awesomeapp.css">
+<link rel="shortcut icon" href="/images/favicon.ico">
+<script type="text/javascript" src="/sh/scripts/codebase.js"></script>
+<!-- 추가 -->
+<link rel="stylesheet" href="/css/bootstrap.min.css">
+<link rel="stylesheet" href="/themes/smoothness/jquery-ui.css">
+</head>
+<body>
+메인 컨텐츠
+</body>
+</html>
+```
+- ```common_header(~{::title},~{::link})```  이 부분이 핵심이다.
+- ::title은 현재 페이지의 title 태그들을 전달한다.
+- ::link는 현재 페이지의 link 태그들을 전달한다.
+- 결과를 보면 메인 타이틀이 전달한 부분으로 교체되었다.
+- 공통 부분은 그대로 유지되고 추가 부분에 전달한 link 태그들이 포함된 것을 확인할 수 있다.
 
 
 </div>
