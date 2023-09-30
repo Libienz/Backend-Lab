@@ -268,5 +268,11 @@ public class BasicController {
 - 두번째 파라미터는 생략가능한데 생략하면 지정한 변수명 + Stat으로 사용하면 된다
 - ![img_7.png](img_7.png)
 
+### 조건부 평가
+- 타임리프의 조건식 : if, unless
+- 타임리프는 해당 조건이 맞지 않으면 태그 자체를 렌더링 하지 않는다
+- 만약 다음 조건이 false인 경우 ```<span th:text="'미성년자'" th:if="${user.age lt 20}"></span>``` 부분 자체가 렌더링 되지 않고 사라진다.
+
+
 </div>
 </details>
