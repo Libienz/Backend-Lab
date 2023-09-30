@@ -314,5 +314,71 @@ public class BasicController {
     - 따라서 내추럴 템플릿 기능이 동작하지 않고 렌더링 된 부분이 주석처리 된것을 확인할 수 있다.
     - 인라인 사용 후 결과를 보면 주석 부분이 제거되고 기대한 "userA"가 정확하게 적용된다.
 
+### 템플릿 조각
+- 웹 페이지를 개발할 때는 공통 영역이 많이 있다.
+- 예를 들어서 상단 영역이나 하단 영역, 좌측 카테고리 등등 여러 페이지에서 함께 사용하는 영역들이 있다.
+- 이런 부분을 코드를 복사해서 사용한다면 변경 시 여러 페이지를 다 수정해야 함으로 상당히 비효율 적이다.
+- 타임리프는 이런 문제를 해결하기 위해 템플릿 조각과 레이아웃 기능을 지원한다.
+
+#### footer.html
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<footer th:fragment="copy">
+    푸터 자리 입니다.
+</footer>
+<footer th:fragment="copyParam (param1, param2)">
+    <p>파라미터 자리 입니다.</p>
+    <p th:text="${param1}"></p>
+    <p th:text="${param2}"></p>
+</footer>
+</body>
+</html>
+```
+
+#### fragmentMain.html
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>부분 포함</h1>
+<h2>부분 포함 insert</h2>
+<div th:insert="~{template/fragment/footer :: copy}"></div>
+<h2>부분 포함 replace</h2>
+<div th:replace="~{template/fragment/footer :: copy}"></div>
+<h2>부분 포함 단순 표현식</h2>
+<div th:replace="template/fragment/footer :: copy"></div>
+<h1>파라미터 사용</h1>
+<div th:replace="~{template/fragment/footer :: copyParam ('데이터1', '데이터
+2')}"></div>
+</body>
+</html>
+```
+
+- ```template/fragment/footer :: copy```
+  - template/fragment/footer.html 템플릿에 있는 th:fragmnet="copy" 부분을 조각으로 가져와서 사용한다는 의미
+
+
+-  부분 포함 insert
+  - ```<div th:insert="~{template/fragment/footer :: copy}"></div>```
+  - th:insert를 사용하면 현재 태그 (div) 내부에 추가한다.
+- 부분 포함 replace
+  - ```<div th:replace="~{template/fragment/footer :: copy}"></div>```
+  - th:replace를 사용하면 현재 태그 (div)를 대체한다.
+- 부분 포함 단순 표현식
+  - ```<div th:replace="template/fragment/footer :: copy"></div>```
+  - 템플릿 조각을 사용하는 코드가 단순하면 중괄호 부분을 생략할 수 있다.
+- 파라미터 사용
+  - 다음과 같이 파라미터를 전달해서 동적으로 조각을 렌더링 할 수도 있다.
+  - ```<div th:replace="~{template/fragment/footer :: copyParam ('데이터1', '데이터2')}"></div>```
+
+
+
 </div>
 </details>
