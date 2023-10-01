@@ -571,5 +571,64 @@ public String edit(@PathVariable Long itemId, @ModelAttribute Item item) {
 <summary>Section 02 스프링 통합과 폼</summary>
 <div markdown="1">
 
+## 프로젝트 설정
+- 스프링 MVC 1편에서 마지막에 완성했던 상품 관리 프로젝트 위에 스프링이 지원하는 다양한 기능을 붙여가며 MVC를 학습할 것임
+
+## 입력 폼 처리
+- 타임리프가 제공하는 입력 폼 기능을 적용하여 기존 프로젝트의 폼 코드를 타임리프가 지원하는 기능으로 바꾸어 보자
+- ```th:object``` : 커맨드 객체를 지정한다.
+- ```*{...}``` : 선택 변수식, th:object에서 선택한 객체에 접근한다.
+- ```th:filed``` : HTML 태그의 id, name, value 속성을 자동으로 처리해준다.
+  - 렌더링 전 : ```<input type="text" th:field="*{itemName}" />```
+  - 렌더링 후 : ```<input type="text" id="itemName" name="itemName" th:value="*{itemName}" />```
+
+### 등록 폼
+- th:object를 적용하려면 먼저 해당 오브젝트 정보를 넘겨주어야 한다.
+- 등록 폼이기 때문에 데이터가 비어있는 빈 오브젝트를 만들어서 뷰에 전달하자
+
+```java
+@GetMapping("/add")
+public String addForm(Model model) {
+        model.addAttribute("item", new Item());
+        return "form/addForm";
+}
+```
+
+```html
+
+<form action="item.html" th:action th:object="${item}" method="post">
+  <div>
+    <label for="itemName">상품명</label>
+    <input type="text" id="itemName" th:field="*{itemName}" class="formcontrol" placeholder="이름을 입력하세요">
+  </div>
+  <div>
+    <label for="price">가격</label>
+    <input type="text" id="price" th:field="*{price}" class="form-control"
+           placeholder="가격을 입력하세요">
+  </div>
+  <div>
+    <label for="quantity">수량</label>
+    <input type="text" id="quantity" th:field="*{quantity}" class="formcontrol" placeholder="수량을 입력하세요">
+  </div>
+
+```
+
+- ```th:object="${item}"``` 
+  - form에서 사용할 객체를 지정한다.
+  - 선택 변수식을 적용할 수 있다.
+- ```th:field="*{itemName}"```
+  - 선택 변수식을 사용한 모습 ``` ${item.itemName}```과 같은 효과
+  - 앞서 object를 선택했기에 선택 변수식을 적용할 수 있는 것 
+  - field는 id, name, value 속성을 모두 자동으로 만들어준다.
+
+### 수정 폼
+- 같은 흐름으로 ```th:field```를 이용, id, name, value를 묵시적으로 적용하고 선택변수식을 통해 편리성 높임
+
+### 정리
+- th:object, th:field 덕분에 폼을 개발할 때 약간의 편리함을 얻었다.
+- 하지만 이것의 진짜 위력은 뒤에 설명할 검증에서 나타난다.
+- 이후 검증 부분에서 확인해보자
+
+
 </div>
 </details>
