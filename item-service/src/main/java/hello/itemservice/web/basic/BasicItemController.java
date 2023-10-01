@@ -107,7 +107,7 @@ public class BasicItemController {
 
     @PostMapping("/{itemId}/edit")
     public String edit(@PathVariable Long itemId, @ModelAttribute Item item) {
-        itemRepository.save(item);
+        itemRepository.update(item.getId(), item);
         return "redirect:/basic/items/{itemId}";
     }
 
