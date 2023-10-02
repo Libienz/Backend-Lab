@@ -793,5 +793,28 @@ id="regions3" name="regions">
 ```
 - ```<label for="id 값"```에 지정된 id가 체크박스에서 동적으로 생성된 regions1, regions2, regions3에 맞추어 순서대로 입력된 것을 확인할 수 있다.
 
+## 라디오 버튼
+- 라디오 버튼은 여러 선택지 중에 하나를 선택할 때 사용할 수 있다. 
+- ENUM을 활용해서 만들어보자
+
+```html
+<!-- radio button -->
+<div>
+ <div>상품 종류</div>
+ <div th:each="type : ${itemTypes}" class="form-check form-check-inline">
+ <input type="radio" th:field="*{itemType}" th:value="${type.name()}"
+class="form-check-input">
+ <label th:for="${#ids.prev('itemType')}" th:text="${type.description}"
+class="form-check-label">
+ BOOK
+ </label>
+ </div>
+</div>
+
+```
+- 체크 박스는 수정시 체크를 해제하면 아무 값도 넘어가지 않기 때문에 히든 필드가 필요했었음
+- 라디오 버튼은 이미 선택이 되어 있다면, 수정시에도 항상 하나를 선택하도록 되어 있음으로 체크박스와 달리 별도의 히든 필드를 사용할 필요가 없다
+
+##
 </div>
 </details>
