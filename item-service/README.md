@@ -815,6 +815,22 @@ class="form-check-label">
 - 체크 박스는 수정시 체크를 해제하면 아무 값도 넘어가지 않기 때문에 히든 필드가 필요했었음
 - 라디오 버튼은 이미 선택이 되어 있다면, 수정시에도 항상 하나를 선택하도록 되어 있음으로 체크박스와 달리 별도의 히든 필드를 사용할 필요가 없다
 
-##
+## 셀렉트 박스 
+- 셀렉트 박스는 여러 선택지 중에 하나를 선택할 때 사용할 수 있다.
+- 자바 객체를 활용해서 개발해보자
+```html
+
+<!-- SELECT -->
+<div>
+ <div>배송 방식</div>
+ <select th:field="*{deliveryCode}" class="form-select">
+ <option value="">==배송 방식 선택==</option>
+ <option th:each="deliveryCode : ${deliveryCodes}" th:value="$
+{deliveryCode.code}"
+ th:text="${deliveryCode.displayName}">FAST</option>
+ </select>
+</div>
+<hr class="my-4">
+```
 </div>
 </details>
