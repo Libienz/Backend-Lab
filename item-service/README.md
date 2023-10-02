@@ -717,5 +717,81 @@ name="open" value="true"
 - 체크 박스에서 판매 여부를 선택해서 저장하면 조회시에는 checked 속성이 추가된 것을 확인할 수 있다
 - 이런 부분은 원래 개발자가 value를 까보고 checked를 true로 넣거나 false로 넣는 분기문을 거치도록 설계해야 함
 - 하지만 타임 리프의 th:field를 사용하면 값이 true인 경우 자동으로 checked 처리를 해준다.
+
+
+## 체크 박스 - 멀티
+
+- 등록 지역
+  - 서울 부산 제주
+  - 체크 박스로 다중 선택할 수 있다.
+
+#### ModelAttribute 특별한 사용법
+```java
+@ModelAttribute("regions")
+public Map<String, String> regions() {
+ Map<String, String> regions = new LinkedHashMap<>();
+ regions.put("SEOUL", "서울");
+ regions.put("BUSAN", "부산");
+ regions.put("JEJU", "제주");
+ return regions;
+}
+
+```
+- 등록 폼, 상세 화면, 수정 폼에서 모두 서울 부산 제주라는 체크 박스를 반복해서 보여주어야 한다.
+- 이렇게 각각의 컨트롤러에서 공통으로 사용되는 모델이 있는 경우 위 처럼 별도로 분리하여 @ModelAttribute를 적용하면 모든 컨트롤러에서 모델에 담기게 된다.
+- 물론 안쓰는 컨트롤러에서도 모델에 담기겠지만 우려할만한 성능차이는 없음으로 반복되는 코드를 줄이고 싶다면 위의 방법을 고려하자
+
+#### addForm.html - 추가
+```html
+
+<!-- multi checkbox -->
+<div>
+ <div>등록 지역</div>
+ <div th:each="region : ${regions}" class="form-check form-check-inline">
+ <input type="checkbox" th:field="*{regions}" th:value="${region.key}"
+class="form-check-input">
+ <label th:for="${#ids.prev('regions')}"
+ th:text="${region.value}" class="form-check-label">서울</label>
+ </div>
+</div>
+```
+
+- ```th:for="${#ids.prev('regions')}"```
+  - 멀티 체크 박스는 같은 이름의 여러 체크박스를 만들 수 있다. 
+  - 그런데 문제는 이렇게 반복해서 HTML 태그를 생성할 때 생성된 HTML 태그 속성에서 name은 같아도 되지만 id는 모두 달라야 한다는 것이다.
+  - 따라서 타임리프는 체크박스를 each 루프 안에서 반복할 때 임의로 1,2,3 숫자를 뒤에 붙여준다.
+
+#### 타임리프 HTML 생성 결과
+
+```html
+<!-- multi checkbox -->
+<div>
+ <div>등록 지역</div>
+ <div class="form-check form-check-inline">
+ <input type="checkbox" value="SEOUL" class="form-check-input"
+id="regions1" name="regions">
+ <input type="hidden" name="_regions" value="on"/>
+ <label for="regions1"
+ class="form-check-label">서울</label>
+ </div>
+ <div class="form-check form-check-inline">
+ <input type="checkbox" value="BUSAN" class="form-check-input"
+id="regions2" name="regions">
+ <input type="hidden" name="_regions" value="on"/>
+ <label for="regions2"
+ class="form-check-label">부산</label>
+ </div>
+ <div class="form-check form-check-inline">
+ <input type="checkbox" value="JEJU" class="form-check-input"
+id="regions3" name="regions">
+ <input type="hidden" name="_regions" value="on"/>
+ <label for="regions3"
+ class="form-check-label">제주</label>
+ </div>
+</div>
+<!-- -->
+```
+- ```<label for="id 값"```에 지정된 id가 체크박스에서 동적으로 생성된 regions1, regions2, regions3에 맞추어 순서대로 입력된 것을 확인할 수 있다.
+
 </div>
 </details>
