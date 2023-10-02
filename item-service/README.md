@@ -672,6 +672,50 @@ public String addForm(Model model) {
   - 체크 박스 체크: open이 전송된 경우임. open에 있는 값을 사용
   - 체크 박스 미체크: open이 없고 _open만 있는 것을 확인, false로 값을 채움 
 
+## 체크 박스 - 단일 2
+- 개발할 때마다 단일 1에서 했던 것 처럼 히든 필드를 추가하는 것은 번거롭다
+- 타임리프가 제공하는 폼 기능을 사용하면 이런 부분을 자동으로 처리할 수 있다.
 
+#### 타임리프 - 체크 박스 코드 추가
+```html
+<!-- single checkbox -->
+<div>판매 여부</div>
+<div>
+ <div class="form-check">
+ <input type="checkbox" id="open" th:field="*{open}" class="form-checkinput">
+ <label for="open" class="form-check-label">판매 오픈</label>
+ </div>
+</div>
+```
+- 체크 박스의 기존 코드를 제거하고 타임리프가 제공하는 체크 박스 코드로 변경하자
+- 타임리프를 사용하면 체크 박스의 히든 필드와 관련된 부분도 함께 해결해준다. 
+- HTML 생성 결과를 보면 히든 필드 부분이 자동으로 생성되어 있다.
+
+#### 상품 상세에 체크 박스 추가
+```html
+<hr class="my-4">
+<!-- single checkbox -->
+<div>판매 여부</div>
+<div>
+ <div class="form-check">
+ <input type="checkbox" id="open" th:field="${item.open}" class="formcheck-input" disabled>
+ <label for="open" class="form-check-label">판매 오픈</label>
+ </div>
+</div>
+```
+- HTML 생성 결과
+```html
+<hr class="my-4">
+<!-- single checkbox -->
+<div class="form-check">
+ <input type="checkbox" id="open" class="form-check-input" disabled
+name="open" value="true"
+ checked="checked">
+ <label for="open" class="form-check-label">판매 오픈</label>
+</div>
+```
+- 체크 박스에서 판매 여부를 선택해서 저장하면 조회시에는 checked 속성이 추가된 것을 확인할 수 있다
+- 이런 부분은 원래 개발자가 value를 까보고 checked를 true로 넣거나 false로 넣는 분기문을 거치도록 설계해야 함
+- 하지만 타임 리프의 th:field를 사용하면 값이 true인 경우 자동으로 checked 처리를 해준다.
 </div>
 </details>
