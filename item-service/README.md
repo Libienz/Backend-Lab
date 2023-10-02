@@ -1,4 +1,4 @@
-## SpringMVC1 
+# SpringMVC1 
 <details>
 <summary>Section 07 스프링 MVC 웹 실습</summary>
 <div markdown="1">
@@ -629,6 +629,13 @@ public String addForm(Model model) {
 - 하지만 이것의 진짜 위력은 뒤에 설명할 검증에서 나타난다.
 - 이후 검증 부분에서 확인해보자
 
+## 요구사항 추가
+- 타임리프를 사용해서 폼에서 체크박스, 라디오 버튼, 셀렉트 박스를 편리하게 사용하는 방법을 학습해보자
+- 기존 상품 서비스에서 다음 요구사항이 추가되었다.
+  - 판매여부
+  - 상품 종류
+  - 배송 방식
+- ![img_8.png](img_8.png)
 
 </div>
 </details>
