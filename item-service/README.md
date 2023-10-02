@@ -637,5 +637,41 @@ public String addForm(Model model) {
   - 배송 방식
 - ![img_8.png](img_8.png)
 
+## 체크박스 - 단일1
+
+#### 체크박스 추가
+```html
+<hr class="my-4">
+<!-- single checkbox -->
+<div>판매 여부</div>
+<div>
+ <div class="form-check">
+ <input type="checkbox" id="open" name="open" class="form-check-input">
+ <label for="open" class="form-check-label">판매 오픈</label>
+ </div>
+</div>
+
+```
+
+- 상품이 등록되는 곳에 로그를 남겨 확인해보면
+  - 체크박스를 체크했다면 HTML form에서 open=on이라는 값이 넘어간다. 
+  - on 이라는 문자는 스프링 타입 컨버터에 의하여 true 타입으로 변환된 후 우리가 true를 받을 수 있는 것이다.
+- 하지만 체크 박스를 선택하지 않은 경우 HTML form을 살펴보면 open이라는 필드 자체가 서버로 전송되지 않는다.
+- ![img_9.png](img_9.png)
+- 바디를 보면 open의 이름도 전송되지 않는 것을 확인할 수 있다. 
+- 서버에서 따라서 open을 찍어보면 값이 null인 것을 확인할 수 있다. 
+
+### HTML checkbox 태생적 한계
+- HTML 체크 박스는 선택이 안되면 클라이언트에서 서버로 값 자체를 보내지 않는다.
+- 수정의 경우에는 상황에 따라서 이 방식이 문제가 될 수 있다.
+- 사용자가 의도적으로 체크되어 있던 값을 체크를 해제해도 아무 값이 넘어가지 않기 때문에 서버 구현에 따라서는 값이 오지 않은 것으로 판단해서 값을 변경하지 않을 수도 있는 것이다.
+### 스프링 MVC의 해결책
+- 이런 문제를 해결하기 위해 스프링 MVC는 약간의 트릭을 하용하는데, 히든 필드를 이용하는 것이다.
+- ```_open```처럼 기존 체크 박스 이름 앞에 언더스코어를 붙여서 전송하면 체크를 해제했다고 인식할 수 있다. 
+- 히든 필드는 항상 전송되기에 다음과 같은 판단이 가능하다.
+  - 체크 박스 체크: open이 전송된 경우임. open에 있는 값을 사용
+  - 체크 박스 미체크: open이 없고 _open만 있는 것을 확인, false로 값을 채움 
+
+
 </div>
 </details>
