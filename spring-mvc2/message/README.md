@@ -80,5 +80,31 @@ hello.name=hello {0}
 ```
 
 
+## 웹 애플리케이션에 메시지 적용하기
+- 실제 웹 애플리케이션에 메시지를 적용해보자
+- 타임리프의 메시지 표현식 기능을 이용 메시지를 중앙 관리 해보자
+
+```properties
+label.item=상품
+label.item.id=상품 ID
+label.item.itemName=상품명
+label.item.price=가격
+label.item.quantity=수량
+page.items=상품 목록
+page.item=상품 상세
+page.addItem=상품 등록
+page.updateItem=상품 수정
+button.save=저장
+button.cancel=취소
+```
+
+#### 타임리프 메시지 적용
+- 타임리프의 메시지 표현식 ```#{...}```를 사용하면 스프링의 메시지를 편리하게 조회할 수 있다.
+- 예를 들어서 방금 등록한 상품이라는 이름을 조회하려면 ```#{label.item}```이라고 하면 된다.
+- 모든 html에 적용 실습을 진행해보자 -> 진행완료
+
+
+
+
 </div>
 </details>
