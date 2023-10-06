@@ -104,7 +104,25 @@ button.cancel=취소
 - 모든 html에 적용 실습을 진행해보자 -> 진행완료
 
 
+## 웹 애플리케이션에 국제화 적용하기
+- 이번에는 웹 애플리케이션에 국제화를 적용해보자
 
+```properties
+label.item=Item
+label.item.id=Item ID
+label.item.itemName=Item Name
+label.item.price=price
+label.item.quantity=quantity
+page.items=Item List
+page.item=Item Detail
+page.addItem=Item Add
+page.updateItem=Item Update
+button.save=Save
+button.cancel=Cancel
+```
+- 사실 이렇게 properties를 추가하는 것으로 국제화 작업은 거의 끝났다.
+- 앞에서 템플릿 파일에는 모두 메시지 표현식을 통해서 메시지를 사용하도록 적용해두었기 때문이다.
+- 요청이 들어오면 스프링 부트에서는 LocaleResolver로 locale을 알아오고 그에 맞는 적절한 메시지를 선택하는 것이다.
 
 </div>
 </details>
