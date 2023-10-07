@@ -317,5 +317,61 @@ field-error' : 'form-control'"
 - 그래서 오류가 발생한 경우 사용자 입력 값을 보관하는 별도의 방법이 필요하다.
 - 그리고 이렇게 보관한 사용자 입력 값을 검증 오류 발생시 화면에 다시 출력하는 것이 위의 코드이다.
 
+## 오류 코드와 메시지 처리1
+- 오류 메시지를 하드코딩 하지 않고 체계적으로 다루어 보자
+
+#### errors.properties
+
+```properties
+required.item.itemName=상품 이름은 필수입니다.
+range.item.price=가격은 {0} ~ {1} 까지 허용합니다.
+max.item.quantity=수량은 최대 {0} 까지 허용합니다.
+totalPriceMin=가격 * 수량의 합은 {0}원 이상이어야 합니다. 현재 값 = {1}
+```
+
+#### addItemV3()
+```java    
+    @PostMapping("/add")
+    public String addItemV3(@ModelAttribute Item item, BindingResult bindingResult,
+                            RedirectAttributes redirectAttributes) {
+        if (!StringUtils.hasText(item.getItemName())) {
+            bindingResult.addError(new FieldError("item", "itemName",
+                    item.getItemName(), false, new String[]{"required.item.itemName"}, null,
+                    null));
+        }
+        if (item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() >
+                1000000) {
+            bindingResult.addError(new FieldError("item", "price", item.getPrice(),
+                    false, new String[]{"range.item.price"}, new Object[]{1000, 1000000}, null));
+        }
+        if (item.getQuantity() == null || item.getQuantity() > 10000) {
+            bindingResult.addError(new FieldError("item", "quantity",
+                    item.getQuantity(), false, new String[]{"max.item.quantity"}, new Object[]
+                    {9999}, null));
+        }
+        //특정 필드 예외가 아닌 전체 예외
+        if (item.getPrice() != null && item.getQuantity() != null) {
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if (resultPrice < 10000) {
+                bindingResult.addError(new ObjectError("item", new String[]
+                        {"totalPriceMin"}, new Object[]{10000, resultPrice}, null));
+            }
+        }
+        if (bindingResult.hasErrors()) {
+            log.info("errors={}", bindingResult);
+            return "validation/v2/addForm";
+        }
+        //성공 로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+
+```
+- codes 인자를 통해 메시지 코드를 지정하고 argument를 전달해 치환할 값이 있으면 치환하도록 했다
+- 중앙에서 메시지를 관리하고 코드를 이용하여 오류 메시지의 일관성을 유지하도록 설계한 것이다.
+
+
 </div>
 </details>
