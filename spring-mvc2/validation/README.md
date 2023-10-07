@@ -271,5 +271,51 @@ field-error' : 'form-control'"
 - BindingResult가 있으면 @ModelAttribute에 데이터 바인딩 시 오류가 발생해도 컨트롤러가 호출된다! 
 - 검증오류를 핸들링하겠다는 의사를 표명하는 것!
 
+## FieldError, ObjectError
+- 사용자 입력 오류 메시지가 화면에 남지 않는다.
+- 화면에 남도록 수정해보자
+
+```java    
+    @PostMapping("/add")
+    public String addItemV2(@ModelAttribute Item item, BindingResult bindingResult,
+                            RedirectAttributes redirectAttributes) {
+        if (!StringUtils.hasText(item.getItemName())) {
+            bindingResult.addError(new FieldError("item", "itemName",
+                    item.getItemName(), false, null, null, "상품 이름은 필수입니다."));
+        }
+        if (item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() >
+                1000000) {
+            bindingResult.addError(new FieldError("item", "price", item.getPrice(),
+                    false, null, null, "가격은 1,000 ~ 1,000,000 까지 허용합니다."));
+        }
+        if (item.getQuantity() == null || item.getQuantity() > 10000) {
+            bindingResult.addError(new FieldError("item", "quantity",
+                    item.getQuantity(), false, null, null, "수량은 최대 9,999 까지 허용합니다."));
+        }
+        //특정 필드 예외가 아닌 전체 예외
+        if (item.getPrice() != null && item.getQuantity() != null) {
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if (resultPrice < 10000) {
+                bindingResult.addError(new ObjectError("item", null, null, "가격 * 수량의 합은 10,000원 이상이어야 합니다. 현재 값 = " + resultPrice));
+            }
+        }
+        if (bindingResult.hasErrors()) {
+            log.info("errors={}", bindingResult);
+            return "validation/v2/addForm";
+        }
+        //성공 로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+
+```
+- FieldError의 생성자를 다르게 바꾸어 rejectedValue의 값을 남기도록 설정했다.
+- 사용자의 입력 데이터가 컨트롤러의 @ModelAttribute에 바인딩되는 시점에 오류가 발생하면 모델 객체에 사용자 입력 값을 유지하기 어렵다
+- 예를 들어서 가격에 숫자가 아닌 문자가 입력된다면 가격은 Integer 타입임으로 문자를 보관할 수 있는 방법이 없는 것이다.
+- 그래서 오류가 발생한 경우 사용자 입력 값을 보관하는 별도의 방법이 필요하다.
+- 그리고 이렇게 보관한 사용자 입력 값을 검증 오류 발생시 화면에 다시 출력하는 것이 위의 코드이다.
+
 </div>
 </details>
