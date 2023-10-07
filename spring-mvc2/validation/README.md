@@ -529,6 +529,31 @@ public class MessageCodesResolverTest {
 - 이제 우리 어플리케이션에 이런 오류 코드 전략을 도입해보자
 - errors.properties만 수정하면 된다.
 
+## 오류 코드와 메시지 처리
+- 검증 오류 코드는 다음과 같이 2가지로 나눌 수 있다.
+  - 개발자가 직접 설정한 오류 코드 -> rejectValue를 직접 호출
+  - 스프링이 직접 검증 오류에 추가한 경우 (주로 타입 정보가 맞지 않음)
+- 지금까지는 컨트롤러가 호출 되고 우리가 검증한 내용에 대해 오류 코드를 생성하고 처리하는 것을 보았다.
+- 그런데 binding에 실패해서 스프링이 날려주는 오류 메시지는 어떻게 처리해야 할까?
+
+### 직접 확인해보자
+- price 필드에 문자 "A"를 입력해보자
+- 로그를 확인해보면 BindingResult에 FieldError가 담겨있고, 다음과 같은 메시지 코드들이 생성되었다.
+- codes[typeMismatch.item.price,typeMismatch.price,typeMismatch.java.lang.Integer,typ
+  eMismatch]
+- 4가지 메시지 코드가 입력되어 있는 것이다.
+- 그렇다 스프링은 타입 오류가 발생하면 typeMismatch라는 오류 코드를 사용한다. 
+- 이 오류 코드가 MessageCodesResolver를 통하면서 4가지 메시지 코드가 생성된 것이다.
+
+### errors.properties 추가
+```properties
+#추가
+typeMismatch.java.lang.Integer=숫자를 입력해주세요.
+typeMismatch=타입 오류입니다.
+```
+- 이렇게 추가하고 실행하면 오류 메시지를 올바르게 처리하는 것을 확인할 수 있다.
+- 메시지 코드 생성 전략은 그냥 만들어진 것이 아니다!
+- 조금 뒤에서 Bean Validation을 학습하면 그 진가를 더 확인할 수 있다.
 
 </div>
 </details>
