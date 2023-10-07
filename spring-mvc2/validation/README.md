@@ -372,6 +372,54 @@ totalPriceMin=가격 * 수량의 합은 {0}원 이상이어야 합니다. 현재
 - codes 인자를 통해 메시지 코드를 지정하고 argument를 전달해 치환할 값이 있으면 치환하도록 했다
 - 중앙에서 메시지를 관리하고 코드를 이용하여 오류 메시지의 일관성을 유지하도록 설계한 것이다.
 
+## 오류 코드와 메시지 처리2
+- FieldError, ObjectError는 파라미터도 많아서 직접 다루기 너무 번거롭다.
+- 좀 더 자동화 할 수 있는 여지가 없을까?
+- 컨트롤러에서 BindingResult는 검증해야 할 객체인 target 바로 다음에 온다.
+- 따라서 BindingResult는 이미 본인이 검증해야 할 객체인 target을 알고 있는 것이다.
+- 미리 알고 있다는 점을 이용해서 코드를 줄여보자!
+- BindingResult가 제공하는 rejectValue(), reject()를 사용하면 FieldError, ObjectError를 직접 생성하지 않고 깔끔하게 검증 오류를 다룰 수 있다.
+
+#### ValidationItemControllerV2 - addItemV4() 추가
+```java
+    @PostMapping("/add")
+    public String addItemV4(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        log.info("objectName={}", bindingResult.getObjectName());
+        log.info("target={}", bindingResult.getTarget());
+        if (!StringUtils.hasText(item.getItemName())) {
+            bindingResult.rejectValue("itemName", "required");
+        }
+        if (item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000) {
+            bindingResult.rejectValue("price", "range", new Object[]{1000, 1000000}, null);
+        }
+        if (item.getQuantity() == null || item.getQuantity() > 10000) {
+            bindingResult.rejectValue("quantity", "max", new Object[]{9999}, null);
+        }
+        //특정 필드 예외가 아닌 전체 예외
+        if (item.getPrice() != null && item.getQuantity() != null) {
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if (resultPrice < 10000) {
+                bindingResult.reject("totalPriceMin", new Object[]{10000,
+                        resultPrice}, null);
+            }
+        }
+        if (bindingResult.hasErrors()) {
+            log.info("errors={}", bindingResult);
+            return "validation/v2/addForm";
+        }
+        //성공 로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+```
+- 실행해보니 오류 메시지가 정상 출력된다. 그런데 errors.properties에 있는 코드를 완벽히 직접 입력하지 않았는데 어떻게 출력한 것일까?
+- rejectValue의 파라미터로 받는 error코드는 메시지에 등록된 코드가 아니다. (messageResolber를 위한 코드)
+- 이는 뒤에서 자세히 알아보자
+
+## 
+
 
 </div>
 </details>
