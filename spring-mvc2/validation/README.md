@@ -179,6 +179,97 @@ field-error' : 'form-control'"
   - 그런데 이러한 오류는 스프링 MVC에서 컨트롤러에 진입하기도 전에 예외가 발생하기 때문에 컨트롤러가 호출되지도 않고 400을 띄우게 된다.
 - 결국 고객이 입력한 값도 어딘가에 별도로 관리가 되어야 한다.
 
+## V2 Binding Result 
+- 지금부터는 스프링이 제공하는 검증 오류 처리 방법을 알아보자
+- 핵심은 BindingResult
+
+#### ValidationControllerV2 - addItemV1
+```java
+
+    @PostMapping("/add")
+    public String addItemV1(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
+
+
+        //검증 로직
+        if (!StringUtils.hasText(item.getItemName())) {
+//            errors.put("itemName", "상품 이름은 필수입니다.");
+            bindingResult.addError(new FieldError("item", "itemName", "상품 이름은 필수 입니다"));
+        }
+        if (item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000) {
+//            errors.put("price", "가격은 1,000 ~ 1,000,000 까지 허용합니다.");
+            bindingResult.addError(new FieldError("item", "price", "가격은 1,000 ~ 1,000,000 까지 허용합니다."));
+        }
+        if (item.getQuantity() == null || item.getQuantity() >= 9999) {
+//            errors.put("quantity", "수량은 최대 9,999 까지 허용합니다.");
+            bindingResult.addError(new FieldError("item", "quantity", "수량은 최대 9,999 까지 허용합니다."));
+        }
+        //특정 필드가 아닌 복합 룰 검증
+        if (item.getPrice() != null && item.getQuantity() != null) {
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if (resultPrice < 10000) {
+//                errors.put("globalError", "가격 * 수량의 합은 10,000원 이상이어야 합니다. 현재 값 = " + resultPrice);
+                bindingResult.addError(new ObjectError("item", "가격 * 수량의 합은 10,000원 이상이어야 합니다. 현재 값 = " + resultPrice));
+            }
+        }
+        //검증에 실패하면 다시 입력 폼으로
+        if (bindingResult.hasErrors()) {
+            log.info("errors={}", bindingResult);
+            return "validation/v2/addForm";
+        }
+
+        //성공 로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+
+```
+- 이전 Map에서 하던 역할을 BindingResult가 하는 것이다.
+- 필드에 오류가 있으면 FieldError 객체를 생성해서 bindingResult에 담아두면 된다.
+- 이렇게 bindingResult를 채워서 뷰에 넘겨주면 타임리프는 또 최적화된 문법으로 이를 조회하고 조건 렌더링 할 수 있다.
+
+```html
+<form action="item.html" th:action th:object="${item}" method="post">
+  <div th:if="${#fields.hasGlobalErrors()}">
+    <p class="field-error" th:each="err : ${#fields.globalErrors()}"
+       th:text="${err}">글로벌 오류 메시지</p>
+  </div>
+  <div>
+    <label for="itemName" th:text="#{label.item.itemName}">상품명</label>
+    <input type="text" id="itemName" th:field="*{itemName}"
+           th:errorclass="field-error" class="form-control"
+           placeholder="이름을 입력하세요">
+    <div class="field-error" th:errors="*{itemName}">
+      상품명 오류
+    </div>
+  </div>
+  <div>
+    <label for="price" th:text="#{label.item.price}">가격</label>
+    <input type="text" id="price" th:field="*{price}"
+           th:errorclass="field-error" class="form-control"
+           placeholder="가격을 입력하세요">
+    <div class="field-error" th:errors="*{price}">
+      가격 오류
+    </div>
+  </div>
+  <div>
+    <label for="quantity" th:text="#{label.item.quantity}">수량</label>
+    <input type="text" id="quantity" th:field="*{quantity}"
+           th:errorclass="field-error" class="form-control"
+           placeholder="수량을 입력하세요">
+    <div class="field-error" th:errors="*{quantity}">
+      수량 오류
+    </div>
+  </div>
+```
+- 타임리프는 스프링의 BindingResult를 활용해서 편리하게 검증 오류를 표현하는 기능을 제공한다.
+
+## BindingResult
+- 스프링이 제공하는 검증 오류를 보관하는 객체이다.
+- 검증 오류가 발생하면 여기에 보관하면 된다.
+- BindingResult가 있으면 @ModelAttribute에 데이터 바인딩 시 오류가 발생해도 컨트롤러가 호출된다! 
+- 검증오류를 핸들링하겠다는 의사를 표명하는 것!
 
 </div>
 </details>
