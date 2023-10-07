@@ -1,7 +1,7 @@
 # Spring MVC 2편
 
 <details>
-<summary>Section 04 메시지, 국제화 </summary>
+<summary>Section 04 검증 </summary>
 <div markdown="1">
 
 ## 검증 요구사항 도착
@@ -439,6 +439,85 @@ totalPriceMin=가격 * 수량의 합은 {0}원 이상이어야 합니다. 현재
 - 물론 이렇게 객체명과 필드명을 조합한 메시지가 있는지 우선 확인하고, 없으면 좀 더 범용적인 메시지를 선택하도록 추가 개발이 필요하다
 - 하지만 범용성 있게 잘 개발해두면 메시지의 추가만으로 매우 편리하게 오류 메시지를 관리할 수 있을 것이다.
 - 스프링은 MessageCodesResolver라는 것으로 이러한 기능을 지원한다! 
+
+
+## 오류 코드와 메시지 처리 4
+- 우선 테스트 코드로 MessageCodesResolver를 알아보자
+
+```java
+package hello.itemservice.validation;
+import org.junit.jupiter.api.Test;
+import org.springframework.validation.DefaultMessageCodesResolver;
+import org.springframework.validation.MessageCodesResolver;
+import static org.assertj.core.api.Assertions.assertThat;
+public class MessageCodesResolverTest {
+  MessageCodesResolver codesResolver = new DefaultMessageCodesResolver();
+  @Test
+  void messageCodesResolverObject() {
+    String[] messageCodes = codesResolver.resolveMessageCodes("required",
+            "item");
+    assertThat(messageCodes).containsExactly("required.item", "required");
+  }
+  @Test
+  void messageCodesResolverField() {
+    String[] messageCodes = codesResolver.resolveMessageCodes("required",
+            "item", "itemName", String.class);
+    assertThat(messageCodes).containsExactly(
+            "required.item.itemName",
+            "required.itemName",
+            "required.java.lang.String",
+            "required"
+    );
+  }
+}
+```
+
+### MessageCodesResolver
+- 검증 오류 코드로 메시지 코드들을 생성한다.
+- MessageCodesResolver는 인터페이스이고 DefaultMessageCodesResolver는 기본 구현체이다.
+- DefaultMessageCodesResolver는 기본 메시지 생성 규칙이 있다.
+  - 객체 오류
+    - code + "." + object name
+    - code
+    - 예시
+      - 오류 코드 : required, object name : item
+      - required.item
+      - required
+  - 필드 오류
+    - code + "." + object name + "." + field
+    - code + "." + field
+    - code + "." + field type
+    - code
+    - 예시 
+      - 오류 코드: typeMismatch, object name "user", field "age", field type: int
+      - "typeMismatch.user.age"
+      - "typeMismatch.age"
+      - "typeMismatch.int"
+      - "typeMismatch"
+
+### 동작 방식
+- rejectValue(), reject()는 내부에서 MessageCodeResolver를 사용한다.
+- 여기에서 메시지 코드들을 생성한다.
+- FieldError, ObjectError의 생성자를 보면 오류 코드를 하나가 아니라 여러 오류 코드를 가질 수 있었다.
+- MessageCodeResolver를 통해서 생성된 순서대로 오류 코드를 보관하기 위한 것이다.
+- 이 부분을 로그를 찍어 확인해보면 코드가 다음과 같이 저장되어 있다
+  - codes [range.item.price, range.price, range.java.lang.Integer, range]
+
+#### FieldError rejectValue("itemName", "required")
+- 다음 4가지 오류 코드를 자동으로 생성
+- required.item.itemName
+- required.itemName
+- required.java.lang.String
+- required
+#### ObjectError reject("totalPriceMin")
+- 다음 2가지 오류 코드를 자동으로 생성
+- totalPriceMin.item
+- totalPriceMin
+
+#### 우선순위가 가능한 이유!
+- 이렇게 codes를 만들어서 넘기면 우선순위에 맞게 걸리는 값을 꺼내는 것이다.
+- 이를 통해서 범용적이면서도 세세한 것이 필요한 부분에는 알맞은 처리를 할 수 있는 메시지 코드 계층화가 이루어진 것이다
+
 
 
 
