@@ -1,7 +1,7 @@
 # Spring MVC 2편
 
 <details>
-<summary>Section 04 검증 </summary>
+<summary>Section 04 Validation </summary>
 <div markdown="1">
 
 ## 검증 요구사항 도착
@@ -669,6 +669,91 @@ public String addItemV6(@Validated @ModelAttribute Item item, BindingResult
 - 그런데 여러 검증기를 등록한다면 그 중에 어떤 검증기가 실행되어야 할 지 구분이 필요하다.
 - 이 때 supports()가 사용된다.
 - 여기서는 supports(Item.class)가 호출되고, 결과가 true임으로 ItemValidator의 validate()가 호출된다!
+
+</div>
+</details>
+
+
+<details>
+<summary>Section 05 Bean Validation </summary>
+<div markdown="1">
+
+## Bean Validation - 소개
+- 검증 기능을 지금처럼 매번 코드로 작성하는 것은 상당히 번거롭다.
+- 특히 특정 필드에 대한 검증 로직은 대부분 빈 값인지 아닌지, 특정 크기를 넘는지 아닌지와 같이 매우 일반적인 로직이다.
+- Bean Validation은 검증 로직을 편리하게 적용할 수 있도록 도와준다.
+
+```java
+public class Item {
+ private Long id;
+ @NotBlank
+ private String itemName;
+ @NotNull
+ @Range(min = 1000, max = 1000000)
+ private Integer price;
+ @NotNull
+ @Max(9999)
+ private Integer quantity;
+ //...
+}
+```
+
+## Bean Validation - 시작
+- Bean Validation 기능을 어떻게 사용하는지 코드로 알아보자
+- 먼저 스프링과 통합하지 않고 순수한 Bean Validaiton 사용법 부터 테스트 코드로 알아보자
+#### Item에 BeanValidation 애노테이션 적용
+```java
+package hello.itemservice.domain.item;
+import lombok.Data;
+import org.hibernate.validator.constraints.Range;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+@Data
+public class Item {
+  private Long id;
+  @NotBlank
+  private String itemName;
+  @NotNull
+  @Range(min = 1000, max = 1000000)
+  private Integer price;
+  @NotNull
+  @Max(9999)
+  private Integer quantity;
+  public Item() {
+  }
+  public Item(String itemName, Integer price, Integer quantity) {
+    this.itemName = itemName;
+    this.price = price;
+    this.quantity = quantity;
+  }
+}
+```
+
+#### 테스트 코드
+```java
+public class BeanValidationTest {
+  @Test
+  void beanValidation() {
+    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    Validator validator = factory.getValidator();
+    Item item = new Item();
+    item.setItemName(" "); //공백
+    item.setPrice(0);
+    item.setQuantity(10000);
+    Set<ConstraintViolation<Item>> violations = validator.validate(item);
+    for (ConstraintViolation<Item> violation : violations) {
+      System.out.println("violation=" + violation);
+      System.out.println("violation.message=" + violation.getMessage());
+    }
+  }
+}
+```
+- 검증기를 명시적으로 생성하고 ConstraintViolation 출력 결과를 보면 다양한 정보를 확인할 수 있다.
+- 스프링은 여기서 더 나아가서 이미 개발자를 위해 빈 검증기를 통합해두었는데 이제 그 사용법을 알아보자
+
+
+
 
 </div>
 </details>
