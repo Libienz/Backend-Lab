@@ -752,6 +752,86 @@ public class BeanValidationTest {
 - 검증기를 명시적으로 생성하고 ConstraintViolation 출력 결과를 보면 다양한 정보를 확인할 수 있다.
 - 스프링은 여기서 더 나아가서 이미 개발자를 위해 빈 검증기를 통합해두었는데 이제 그 사용법을 알아보자
 
+## Bean Validation - 스프링 적용
+- 기존에 등록한 ItemValidator를 제거해두고 BeanValidation을 사용해보자
+- 정상 동작하는 것을 확인할  수 있다.
+- 스프링 MVC는 어떻게 Bean Validator를 사용하는가?
+- 스프링 부트에 spring-boot-starter-validation 라이브러리를 넣으면 자동으로 Bean Validator를 인지하고 스프링에 통합한다
+- 스프링 부트는 자동으로 글로벌 Validator로 등록한다.
+- 이 Validator는 @NotNull같은 애노테이션을 보고 검증을 수행한다.
+- 이렇게 글로벌 Validator가 적용되어 있기 때문에 애노테이션만 적용하면 되는 것이다.
+- 검증 오류가 발생하면 FieldError, ObjectError를 생성해서 BindinResult에 담아준다.
+
+## Bean Validator 검증 순서
+-  @ModelAttribute 각각의 필드에 타입 변환 시도
+  - 성공하면 다음으로
+  - 실패하면 typeMismatch 로 FieldError 추가
+- Validator 적용
+  - 바인딩에 성공한 필드만 Bean Validation이 적용된다.
+  - 생각해보면 당연! 
+  - 1000~10000사이여야 되는 건 바인딩이 올바르게 된 후에 검증할 수 있다.
+
+## Bean Validation - 에러 코드 핸들링
+- Bean Validation이 기본으로 제공하는 오류 메시지를 좀 더 자세히 변경하고 싶으면 어떻게 해야 할끼?
+- 어떤 ErrorCode가 resolve되는지 확인하고 errors.properties에 추가하면 된다.
+- 예시를 보자
+- NotBlank라는 오류 코드를 기반으로 MessageCodeResolver가 만들어낸 메시지 코드들을 살펴보자
+  - @NotBlank
+  - NotBlank.item.itemName
+  - NotBlank.itemName
+  - NotBlank.java.lang.String
+  - NotBlank
+- 여기에 맞게 메시지를 등록하면 메시지가 잘 처리될 것이다.
+- 또 메시지처리는 messageSource말고 다른 곳에서 할 수도 있다. 
+- BeanValidation이 메시지를 찾는 순서를 알면 어떤 곳에 메시지를 등록하는지 알 수 있다
+- BeanValidation이 메시지를 찾는 순서는 다음과 같다
+  - 생성된 메시지 코드 순서대로 messageSource에서 메시지 찾기
+  - 애노테이션의 message 속성 사용 (@NotBlank(message = "공백! {0}"))
+  - 라이브러리가 제공하는 기본 값 사용
+- 즉 메시지 코드를 통해 메시지를 찾는 것이 먼저 일어나고 없으면 애노테이션 순서로 감을 기억하자
+
+## Bean Validation - 오브젝트 오류
+- Bean Validation에서 특정 필드가 아닌 오브젝트 관련 오류는 어떻게 처리할 수 있을까?
+- 잘 사용하지는 않지만 다음과 같이 @ScriptAssert()를 사용할 수 있다.
+
+```java
+@Data
+@ScriptAssert(lang = "javascript", script = "_this.price * _this.quantity >= 10000")
+public class Item {
+ //...
+}
+```
+- 실행해보면 오브젝트 오류를 잘 잡아내는 것을 확인할 수 있다.
+- 메시지 코드도 다음과 같이 생성된다.
+  - ScriptAssert.item
+  - ScriptAssert
+- 그런데 실제 사용해보면 제약이 많고 제공하는 기능보다 복잡함이 크다.
+- 그리고 실무에서는 검증 기능이 해당 객체의 범위를 넘어서는 경우들도 종종 등장하는데 그런 경우 대응이 어렵다.
+- 결론은 오브젝트 오류의 경우 @ScriptAssert를 사용하는 것보다 다음과 같이 오브젝트 오류 관련 부분만 직접 자바 코드로 작성하는 것을 권장한다.
+```java    
+    @PostMapping("/add")
+    public String addItem(@Validated @ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        //특정 필드 예외가 아닌 전체 예외
+        if (item.getPrice() != null && item.getQuantity() != null) {
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if (resultPrice < 10000) {
+                bindingResult.reject("totalPriceMin", new Object[]{10000, resultPrice}, null);
+            }
+        }
+        if (bindingResult.hasErrors()) {
+            log.info("errors={}", bindingResult);
+            return "validation/v3/addForm";
+        }
+        //성공 로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v3/items/{itemId}";
+    }
+```
+
+
+
 
 
 
