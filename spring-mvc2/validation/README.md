@@ -835,8 +835,80 @@ public class Item {
 - 이전에 했던 것과 동일하게 수정을 진행했다.
 - 그런데 이렇게 두면 한계가 드러나는데.. 바로 다음에 확인해보자
 
+## Bean Validation - 한계
+- 검증 요구사항이 추가되었다.
+- 등록할 때의 검증사항과 수정할 때의 검증사항이 달라졌다.
+- 등록할 때에는 수량을 9999까지 허용하지만 수정할 때에는 무한까지 가능하게 해달라는 요구사항이 들어온 것이다.
+- 그런데 우리는 모두 Item에 애노테이션을 걸어서 필드 검증을 진행하고 있고 수정요청인지 등록 요청인지 알길이 없다.
+- 바로 이러한 점이 Bean Validation의 한계이다. 
+- 해결방법이 아예 없는 것은 아니다.
+- 스프링 프레임워크의 @Validated에서만 제공되는 group기능을 사용할 수도 있고
+- form 객체를 분리할 수도 있다.
+- 하나씩 알아보자
 
+## Bean Validation - groups
+- 동일한 모델 객체를 등록할 때와 수정할 때 각각 다르게 검증하는 방법을 알아보자
 
+#### Groups 적용
+```java
+package hello.itemservice.domain.item;
+public interface SaveCheck {
+}
+```
+```java
+package hello.itemservice.domain.item;
+public interface UpdateCheck {
+}
+```
+#### Item - groups 적용
+
+```java
+package hello.itemservice.domain.item;
+import lombok.Data;
+import org.hibernate.validator.constraints.Range;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+@Data
+public class Item {
+  @NotNull(groups = UpdateCheck.class) //수정시에만 적용
+  private Long id;
+  @NotBlank(groups = {SaveCheck.class, UpdateCheck.class})
+  private String itemName;
+  @NotNull(groups = {SaveCheck.class, UpdateCheck.class})
+  @Range(min = 1000, max = 1000000, groups = {SaveCheck.class,
+          UpdateCheck.class})
+  private Integer price;
+  @NotNull(groups = {SaveCheck.class, UpdateCheck.class})
+  @Max(value = 9999, groups = SaveCheck.class) //등록시에만 적용
+  private Integer quantity;
+  public Item() {
+  }
+  public Item(String itemName, Integer price, Integer quantity) {
+    this.itemName = itemName;
+    this.price = price;
+    this.quantity = quantity;
+  }
+}
+```
+#### @Validated에 group 지정
+```java
+@PostMapping("/add")
+public String addItemV2(@Validated(SaveCheck.class) @ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes){
+        //...
+}
+```
+
+```java
+@PostMapping("/{itemId}/edit")
+public String editV2(@PathVariable Long itemId, @Validated(UpdateCheck.class)
+@ModelAttribute Item item, BindingResult bindingResult) {
+ //...
+}
+```
+- groups 기능을 사용해서 등록과 수정시에 각각 다른 검증을 진행할 수 있게 되었다.
+- 근데 groups 기능을 사용하니 Item은 물론이고, 전반적으로 복잡도가 올라갔다.
+- 사실 groups 기능은 실제 잘 사용되지 않는데, 그 이유는 실무에서는 주로 다음에 등장하는 등록용 객체와 수정용 폼 객체를 분리해서 사용하기 때문이다.
 
 
 
