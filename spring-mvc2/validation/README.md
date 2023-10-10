@@ -911,7 +911,47 @@ public String editV2(@PathVariable Long itemId, @Validated(UpdateCheck.class)
 - 사실 groups 기능은 실제 잘 사용되지 않는데, 그 이유는 실무에서는 주로 다음에 등장하는 등록용 객체와 수정용 폼 객체를 분리해서 사용하기 때문이다.
 
 
+## Form 전송 객체 분리 - 소개
+- 실무에서는 groups를 잘 사용하지 않고 폼 객체를 분리하는 방법을 쓴다.
+- HTML Form -> ItemSaveForm -> Controller -> Item 생성 -> Repository
+- 생각해보면 수정과 등록에 요구되는 데이터의 set은 다르다. 
+- 등록시에는 로그인 id, 주민번호 등등을 받을 수 있지만
+- 수정 시에는 고칠 수 없는 값들도 있기 때문이다.
+- 따라서 form 객체를 별도로 분리하는 것이 더 좋다.
 
+## Form 전송 객체 분리 - 개발
+
+#### 폼 객체 바인딩
+```java
+@PostMapping("/add")
+public String addItem(@Validated @ModelAttribute("item") ItemSaveForm form,
+BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+ //...
+}
+```
+- Item 대신에 ItemSaveForm을 전달 받는다.
+- 그리고 @Validated로 검증도 수행하고 BindingResult로 검증 결과도 받는다.
+- @ModelAttribute("item")으로 item 모델의 이름을 정의한 것을 주의하자
+  - 이름을 지정하지 않는다면 모델의 이름은 규칙에 의해서 itemSaveForm이 될 것이다.
+  - 현재 타임리프에서 모델을 item으로 접근하고 있기에 이런 부분을 생각해야 한다.
+
+#### 폼 객체를 Item으로 변환
+```java
+//성공 로직
+Item item = new Item();
+item.setItemName(form.getItemName());
+item.setPrice(form.getPrice());
+item.setQuantity(form.getQuantity());
+Item savedItem = itemRepository.save(item);
+```
+- 폼 객체의 데이터를 기반으로 Item 객체를 생성한다. 
+- 이렇게 폼 객체 처럼 중간에 다른 객체가 추가되면 변환하는 과정이 추가된다.
+
+## Bean Validation - HTTP 메시지 컨버터
+- @Valid, @Validated는 HttpMessageConverter(@RequestBody)에도 적용할 수 있다.
+- 다만 HttpMessageConverter는 바인딩에 실패하면 예외없이 컨트롤러를 호출할 수 없다.
+- 이전에 @ModelAttribute는 바인딩에 실패해도 bindingResult에 값을 넘기고 컨트톨러를 호출 한 후 해결할 수 있었다.
+- 이런 차이점이 있는 이유는 @ModelAttribute는 필드 단위로 세세한 주입이 이루어지는 반면 HttpMessageConverter단계에서는 객체로 변경하지 못하면 이후 단계 자체가 진행되지 않고 예외가 발생하기 때문이다.
 
 
 </div>
