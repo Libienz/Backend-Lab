@@ -546,5 +546,207 @@ private void expireCookie(HttpServletResponse response, String cookieName) {
   - 해커가 쿠키를 한번 훔쳐가면 평생 사용할 수 있다.
     - 훔쳐간 쿠키로 악의적인 요청을 계속 시도할 수 있다.
 
+## 대안
+- 쿠키에 중요한 값을 노출하지 않고, 사용자 별로 예측 불가능한 임의의 토큰(랜덤 값)을 노출하고 서버에서 토큰과 사용자 id를 매핑해서 인식한다.
+- 그리고 서버에서 토큰을 관리한다.
+- 토큰은 해커가 임의의 값을 넣어도 찾을 수 없도록 예상 불가능 해야 한다.
+- 해커가 토큰을 털어가도 시간이 지나면 사용할 수 없도록 서버에서 해당 토큰의 만료시간을 짧게 (예: 30분) 유지한다.
+- 또는 해킹이 의심되는 경우 서버에서 해당 토큰을 강제로 제거하면 된다.
+
+## 로그인 처리하기 - 세션 동작 방식
+- 목표
+  - 앞서 쿠키에 중요한 정보를 보관하는 방법은 여러가지 보안 이슈가 있었다.
+  - 이 문제를 해결하려면 결국 중요한 정보를 모두 서버에 저장해야 한다.
+  - 그리고 클라이언트와 서버는 추정 불가능한 임의의 식별자 값으로 연결해야 한다.
+  - 이렇게 서버에 중요한 정보를 보관하고 연결을 유지하는 방법을 세션이라 한다.
+
+#### 세션의 동작 방식
+
+#### 로그인
+- ![img_5.png](img_5.png)
+- 사용자가 loginId, password 정보를 전달하면 서버에서 해당 사용자가 맞는지 확인한다.
+#### 세션 생성
+- ![img_6.png](img_6.png)
+- 세션 ID를 생성하는데, 추정 불가능해야 한다.
+  - UUID는 추정이 불가능하다.
+    - Cookie: mySessionId=zz0101xx-bab9-4b92-9b32-dadb280f4b61
+  - 생성된 세션 ID와 세션에 보관할 값 memberA를 서버의 세션 저장소에 보관한다.
+#### 세션 ID를 응답 쿠키로 전달
+- ![img_7.png](img_7.png)
+- 클라이언트와 서버는 결국 쿠키로 연결 된다.
+- 서버는 클라이언트에 mySessionId라는 이름으로 세션 ID만 쿠키에 담아 전달한다.
+- 클라이언트는 쿠키 저장소에 mySessionId 쿠키를 보관한다.
+#### 중요
+- 여기서 중요한 포인트는 회원과 관련된 정보는 전혀 클라이언트에게 전달하지 않는다는 것이다.
+- 오직 추정 불가능한 세션 ID만 쿠키를 통해 클라이언트에 전달한다.
+#### 클라이언트 요청
+- ![img_8.png](img_8.png)
+- 클라이언트는 요청시 항상 mySessionId 쿠키를 전달한다.
+- 서버에서는 클라이언트가 전달한 mySessionId 쿠키 정보로 세션 저장소를 조회해서 로그인 시 보관한 세션 정보를 사용한다.
+
+## 정리
+- 세션을 사용해서 서버에서 중요한 정보를 관리하게 되었다. 
+- 덕분에 다음과 같은 보안 문제들을 해결할 수 있다.
+  - 쿠키 값을 변조 -> 예상 불가능한 복잡한 세션 ID를 사용한다.
+  - 쿠키에 보관하는 정보는 클라이언트 해킹 시 털릴 가능성이 있다. -> 세션 Id가 털려도 여기에는 중요한 정보가 없다.
+  - 쿠키 탈취 후 사용 -> 해커가 토큰을 털어가도 시간이 지나면 사용할 수 없도록 서버에서 세션의 만료 시간을 짧게 유지한다.
+    - 또는 해킹이 의심되는 경우 서버에서 해당 세션을 강제로 제거할 수 있다
+
+## 로그인 처리하기 - 세션 직접 만들기
+- 세션을 직접 개발해서 적용해보자
+- 세션 관리는 크게 다음 3가지 기능을 제공하면 된다.
+  - 세션 생성
+    - sessionId 생성(임의의 추정 불가능한 랜덤 값)
+    - 세션 저장소에 sessionId와 보관할 값 저장
+    - sessionId로 응답 쿠키를 생성해서 클라이언트에 전달
+  - 세션 조회
+    - 클라이언트가 요청한 sessionId 쿠키의 값으로, 세션 저장소에 보관한 값 조회
+  - 세션 만료
+    - 클라이언트가 요청한 sessionId 쿠키의 값으로 세션 저장소에 보관한 sessionId와 값 제거
+
+#### SessionManager - 세션 관리
+```java
+package hello.login.web.session;
+import org.springframework.stereotype.Component;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+/**
+ * 세션 관리
+ */
+@Component
+public class SessionManager {
+  public static final String SESSION_COOKIE_NAME = "mySessionId";
+  private Map<String, Object> sessionStore = new ConcurrentHashMap<>();
+  /**
+   * 세션 생성
+   */
+  public void createSession(Object value, HttpServletResponse response) {
+    //세션 id를 생성하고, 값을 세션에 저장
+    String sessionId = UUID.randomUUID().toString();
+    sessionStore.put(sessionId, value);
+    //쿠키 생성
+    Cookie mySessionCookie = new Cookie(SESSION_COOKIE_NAME, sessionId);
+    response.addCookie(mySessionCookie);
+  }
+  /**
+   * 세션 조회
+   */
+  public Object getSession(HttpServletRequest request) {
+    Cookie sessionCookie = findCookie(request, SESSION_COOKIE_NAME);
+    if (sessionCookie == null) {
+      return null;
+    }
+    return sessionStore.get(sessionCookie.getValue());
+  }
+  /**
+   * 세션 만료
+   */
+  public void expire(HttpServletRequest request) {
+    Cookie sessionCookie = findCookie(request, SESSION_COOKIE_NAME);
+    if (sessionCookie != null) {
+      sessionStore.remove(sessionCookie.getValue());
+    }
+  }
+  private Cookie findCookie(HttpServletRequest request, String cookieName) {
+    if (request.getCookies() == null) {
+      return null;
+    }
+    return Arrays.stream(request.getCookies())
+            .filter(cookie -> cookie.getName().equals(cookieName))
+            .findAny()
+            .orElse(null);
+  }
+}
+```
+
+
+#### SessionManagerTest - 테스트
+
+```java
+package hello.login.web.session;
+import hello.login.domain.member.Member;
+import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import static org.assertj.core.api.Assertions.assertThat;
+class SessionManagerTest {
+  SessionManager sessionManager = new SessionManager();
+  @Test
+  void sessionTest() {
+    //세션 생성
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    Member member = new Member();
+    sessionManager.createSession(member, response);
+    //요청에 응답 쿠키 저장
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setCookies(response.getCookies());
+    //세션 조회
+    Object result = sessionManager.getSession(request);
+    assertThat(result).isEqualTo(member);
+    //세션 만료
+    sessionManager.expire(request);
+    Object expired = sessionManager.getSession(request);
+    assertThat(expired).isNull();
+  }
+}
+```
+
+## 로그인 처리하기 - 직접 만든 세션 적용
+- 지금까지 개발한 세션 관리 기능을 실제 웹 애플리케이션에 적용해보자
+
+#### LoginController - loginV2()
+```java
+@PostMapping("/login")
+public String loginV2(@Valid @ModelAttribute LoginForm form, BindingResult 
+bindingResult, HttpServletResponse response) {
+    if (bindingResult.hasErrors()) {
+        return "login/loginForm";
+    }
+    Member loginMember = loginService.login(form.getLoginId(),
+    form.getPassword());
+    log.info("login? {}", loginMember);
+    if (loginMember == null) {
+        bindingResult.reject("loginFail", "아이디 또는 비밀번호가 맞지 않습니다.");
+        return "login/loginForm";
+    }
+    //로그인 성공 처리
+    //세션 관리자를 통해 세션을 생성하고, 회원 데이터 보관
+    sessionManager.createSession(loginMember, response);
+    return "redirect:/";
+}
+```
+
+#### HomeController - homeLoginV2()
+```java
+@GetMapping("/")
+public String homeLoginV2(HttpServletRequest request, Model model) {
+ //세션 관리자에 저장된 회원 정보 조회
+ Member member = (Member)sessionManager.getSession(request);
+ if (member == null) {
+ return "home";
+ }
+ //로그인
+ model.addAttribute("member", member);
+ return "loginHome";
+}
+```
+- 세션 관리자에서 저장된 회원 정보를 조회하도록 했다.
+- 만약 회원 정보가 없으면, 쿠키나 세션이 없는 것임으로 로그인 되지 않은 것으로 처리하도록 했다.
+
+### 정리
+- 이번 시간에는 세션과 쿠키의 개념을 명확하게 이해하기 위해서 직접 만들어보았다.
+- 사실 세션이라는 것이 뭔가 특별한 것이 아니라 단지 쿠키를 사용하는데, 서버에서 데이터를 유지하는 방법일 뿐이라는 것을 이해했을 것이다.
+- 그런데 프로젝트마다 이러한 세션 개념을 직접 개발하는 것은 상당히 불편할 것이다. 
+- 그래서 서블릿도 세션 개념을 지원한다.
+- 이제 직접 만드는 세션 말고, 서블릿이 공식 지원하는 세션을 알아보자.
+- 서블릿이 공식 지원한느 세션은 우리가 직접 만든 세션과 동작 방식이 거의 같다.
+- 추가로 세션을 일정시간 사용하지 않으면 해당 세션을 삭제하는 기능도 제공한다.
+
+
 </div>
 </details>
