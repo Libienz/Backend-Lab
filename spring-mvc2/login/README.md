@@ -747,6 +747,97 @@ public String homeLoginV2(HttpServletRequest request, Model model) {
 - 서블릿이 공식 지원한느 세션은 우리가 직접 만든 세션과 동작 방식이 거의 같다.
 - 추가로 세션을 일정시간 사용하지 않으면 해당 세션을 삭제하는 기능도 제공한다.
 
+## 로그인 처리하기 - 서블릿 HTTP 세션 1
+- 세션이라는 개념은 대부분의 웹 어플리케이션에 필요한 것
+- 어쩌면 웹이 등장하면서 부터 나온 문제
+- 서블릿은 세션을 위해 HttpSession이라는 기능을 제공하는데, 지금까지 나온 문제들을 해결해준다.
+- 우리가 직접 구현한 세션의 개념이 이미 구현되어 있고, 더 잘 구현되어 있다.
+
+### HttpSession 소개
+- 서블릿이 제공하는 HttpSession도 결국 우리가 직접 만든 SessionManager와 같은 방식으로 동작한다.
+- 서블릿을 통해 HttpSession을 생성하면 다음과 같은 쿠키를 생성한다.
+- 쿠키 이름이 JSESSIONID이고, 값은 추정 불가능한 랜덤 값이다.
+
+### HttpSession 사용
+- 서블릿이 제공하는 HttpSession을 사용하도록 개발해보자
+
+#### SessionConst
+```java
+package hello.login.web;
+public class SessionConst {
+ public static final String LOGIN_MEMBER = "loginMember";
+}
+```
+- HttpSessino에 데이터를 보관하고 조회할 때 같은 이름이 중복 되어 사용됨으로, 상수를 하나 정의했다.
+
+#### LoginController - loginV3()
+```java
+@PostMapping("/login")
+public String loginV3(@Valid @ModelAttribute LoginForm form, BindingResult 
+bindingResult, HttpServletRequest request) {
+ if (bindingResult.hasErrors()) {
+    return "login/loginForm";
+ }
+ Member loginMember = loginService.login(form.getLoginId(),form.getPassword());
+ log.info("login? {}", loginMember);
+ if (loginMember == null) {
+    bindingResult.reject("loginFail", "아이디 또는 비밀번호가 맞지 않습니다.");
+    return "login/loginForm";
+ }
+ //로그인 성공 처리
+ //세션이 있으면 있는 세션 반환, 없으면 신규 세션 생성
+ HttpSession session = request.getSession();
+ //세션에 로그인 회원 정보 보관
+ session.setAttribute(SessionConst.LOGIN_MEMBER, loginMember);
+ return "redirect:/";
+}
+```
+- 세션 생성
+  - 세션을 생성하려면 request.getSession(create: true)를 사용하면 된다.
+  - create 옵션은 default가 true -> 세션이 있으면 기존 세션 반환 없으면 생성 반환
+  - create false -> 세션이 있으면 기존 세션 반환 없으면 null 반환
+- 세션에 로그인 회원 정보 보관
+  - ```session.setAttribute(SessionConst.LOGIN_MEMBER, loginMember);```
+  - 세션에 데이터를 보관하는 방법은 request.setAttribute와 유사
+  - 하나의 세션에 여러 값을 저장할 수 있다. 
+
+#### LoginController - logoutV3()
+```java
+@PostMapping("/logout")
+public String logoutV3(HttpServletRequest request) {
+ //세션을 삭제한다.
+ HttpSession session = request.getSession(false);
+ if (session != null) {
+    session.invalidate();
+ }
+ return "redirect:/";
+}
+```
+- ```session.invalidate```: 세션을 제거 
+
+#### HomeController - homeLoginV3()
+```java
+@GetMapping("/")
+public String homeLoginV3(HttpServletRequest request, Model model) {
+ //세션이 없으면 home
+ HttpSession session = request.getSession(false);
+ if (session == null) {
+    return "home";
+ }
+ Member loginMember = (Member)
+session.getAttribute(SessionConst.LOGIN_MEMBER);
+ //세션에 회원 데이터가 없으면 home
+ if (loginMember == null) {
+    return "home";
+ }
+ //세션이 유지되면 로그인으로 이동
+ model.addAttribute("member", loginMember);
+ return "loginHome";
+}
+```
+- ```request.getSession(false)``` false 옵션으로 세션을 생성하지 않도록 하며 조회
+- ```session.getAttribute(SessionConst.LOGIN_MEMBER``` 로그인 시점에서 세션에 보관한 회원 객체를 찾는다.
+
 
 </div>
 </details>
