@@ -838,6 +838,104 @@ session.getAttribute(SessionConst.LOGIN_MEMBER);
 - ```request.getSession(false)``` false 옵션으로 세션을 생성하지 않도록 하며 조회
 - ```session.getAttribute(SessionConst.LOGIN_MEMBER``` 로그인 시점에서 세션에 보관한 회원 객체를 찾는다.
 
+## 로그인 처리하기 - 서블릿 HTTP 세션 2
+- @SessionAttribute
+  - 스프링은 세션을 더 편리하게 사용할 수 있도록 애노테이션을 지원한다.
+  - 이미 로그인 된 사용자를 찾을 때는 다음과 같이 사용하면 된다.
+  - 참고로 이 기능은 세션을 생성하지 않는다.
+
+#### HomeController - homeLoginV3Spring())
+```java
+@GetMapping("/")
+public String homeLoginV3Spring(
+ @SessionAttribute(name = SessionConst.LOGIN_MEMBER, required = false) Member loginMember,
+ Model model) {
+ //세션에 회원 데이터가 없으면 home
+ if (loginMember == null) {
+    return "home";
+ }
+ //세션이 유지되면 로그인으로 이동
+ model.addAttribute("member", loginMember);
+ return "loginHome";
+}
+```
+- 세션을 찾고, 세션에 들어있는 데이터를 찾는 번거로운 과정을  스프링이 한번에 편리하게 처리해주는 것을 확인할 수 있다.
+
+## TrackingModes
+- 로그인을 처음 시도하면 URL이 다음과 같이 jsessionid를 포함하고 있는 것을 확인할 수 있다
+- http://localhost:8080/;jsessionid=F59911518B921DF62D09F0DF8F83F872
+- 이것은 웹 브라우저가 쿠키를 지원하지 않을 때 쿠키 대신 URL을 통해 세션을 유지하는 방법이다.
+- 이 방법을 사용하려면 URL에 이 값을 계속 포함해서 전달해야 하는데 잘 사용되지 않는 방법이다.
+- 타임리프 같은 템플릿 엔진을 통해서 링크를 걸면 jsessionid를 URL에 자동으로 포함해줄 수 있다.
+- 서버 입장에서 웹 브라우저가 쿠키를 지원하는지 않느지 최초에는 판단하지 못함으로 쿠키 값도 전달하고, URL에 jsessionid도 함께 전달하도록 유도하는 것이다.
+- URL 전달 방식을 끄고 항상 쿠키를 통해서만 세션을 유지하고 싶으면 다음 옵션을 넣어주면 된다. 이렇게 하면 url에 jsessionid가 노출되지 않는다.
+
+
+## 세션 정보와 타임아웃 설정
+- 세션이 제공하는 정보들을 확인해보자
+
+#### SessionInfoController
+```java
+package hello.login.web.session;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.util.Date;
+@Slf4j
+@RestController
+public class SessionInfoController {
+  @GetMapping("/session-info")
+  public String sessionInfo(HttpServletRequest request) {
+    HttpSession session = request.getSession(false);
+    if (session == null) {
+      return "세션이 없습니다.";
+    }
+    //세션 데이터 출력
+    session.getAttributeNames().asIterator()
+            .forEachRemaining(name -> log.info("session name={}, value={}",
+                    name, session.getAttribute(name)));
+    log.info("sessionId={}", session.getId());
+    log.info("maxInactiveInterval={}", session.getMaxInactiveInterval());
+    log.info("creationTime={}", new Date(session.getCreationTime()));
+    log.info("lastAccessedTime={}", new
+            Date(session.getLastAccessedTime()));
+    log.info("isNew={}", session.isNew());
+    return "세션 출력";
+  }
+}
+```
+
+- sessionId: 세션 id, JSESSIONID의 값이다.
+- maxInactiveInterval: 세션의 유효 시간 
+- creationTime: 세션 생성일시
+- lastAccessedtime: 세션과 연결된 사용자가 최근에 서버에 접근한 시간, 클라이언트에서 서버로 sessionId를 요청한 경우 갱신된다.
+- isNew: 새로 생성된 세션이지, 아니면 이미 과거에 만들어졌는지 여부를 판단
+
+### 세션 타임아웃 설정
+- 세션은 사용자가 로그아웃을 직접 호출해서 session.invalidate()가 호출 되는 경우에 삭제된다.
+- 그런데 대부분의 사용자는 로그아웃을 선택하지 않고, 그냥 웹 브라우저를 종료한다.
+- 문제는 HTTP의 비 연결성 때문에 서버 입장에서는 해당 사용자가 웹 브라우저를 종료했는지 인식할 수 없다.
+- 따라서 서버에서 세션 데이터를 언제 삭제해야 하는지 판단하기가 어렵다.
+- 이 경우 남아있는 세션을 무한정 보관한다면 다음과 같은 문제들이 발생할 수 있다.
+  - 세션과 관련된 쿠키를 탈취 당했을 경우 오랜 시간이 지나도 해당 쿠키로 악의적인 요청을 할 수 있다.
+  - 세션은 기본적으로 메모리에 생성됨으로 메모리가 터져 장애가 날 수 있다.
+
+### 세션의 종료 시점
+- 세션의 종료 시점을 정해야 한다.
+- 보통 30분 정도로 많이 잡는다.
+- 그런데 문제는 30분이 지나면 세션이 삭제되기 때문에 열심히 사이트를 돌아다니다가 또 로그인을 해서 세션을 생성해야 한다.
+- 더 나은 대안은 세션 생성 시점이 아니라 사용자가 서버에 최근에 요청한 시간을 기준으로 30분 정도를 유지해주는 것이다.
+- 이렇게 하면 사용자가 서비스를 사용하고 있으면, 세션의 생존 시간이 30분으로 계속 새로고침 되게 된다.
+- Http 세션은 이 방식을 사용한다.
+
+### 세션 타임아웃 설정
+- 스프링 부트 글로벌 설정
+  - ```server.servlet.session.timeout=60```
+- 특정 세션 단위로 시간 설정
+  - ```session.setMaxInactiveInterval(1800); //1800초```
+- LastAccessedTime이후로 timeout 시간이 지나면 WAS가 내부에서 해당 세션을 제거한다.
 
 </div>
 </details>
