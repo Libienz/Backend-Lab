@@ -1069,5 +1069,93 @@ public class WebConfig {
 - ```setOrder(1)```: 체인으로 동작하는 필터의 순서를 지정한다. (낮을 수록 먼저 동작)
 - ```addUrlPatterns("/*")```: 필터를 적용할 URL 패턴을 지정한다. 한번에 여러 패턴을 지정할 수 있다.
 
+## 서블릿 필터 - 인증 체크
+- 이제 로그가 아닌 인증 체크 필터를 개발해보자
+- 로그인 되지 않은 사용자는 상품 관리 뿐만 아니라 미래에 개발될 페이지에도 접근하지 못하도록 하자.
+
+#### LoginCheckFilter - 인증 체크 필터
+```java
+package hello.login.web.filter;
+
+import hello.login.web.SessionConst;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.PatternMatchUtils;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.net.http.HttpResponse;
+
+@Slf4j
+public class LoginCheckFilter implements Filter {
+
+  private static final String[] whiteList = {"/", "/members/add", "/login", "/logout", "/css/*"};
+
+  @Override
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+    HttpServletRequest httpRequest = (HttpServletRequest) request;
+    HttpServletResponse httpResponse = (HttpServletResponse) response;
+    String requestURI = httpRequest.getRequestURI();
+
+    try {
+      log.info("인증 체크 필터 시작 {}", requestURI);
+
+      if (isLoginCheckPath(requestURI)) {
+        log.info("인증 체크 로직 실행 {}", requestURI);
+        HttpSession session = httpRequest.getSession();
+        if (session == null || session.getAttribute(SessionConst.LOGIN_MEMBER) == null) {
+          log.info("미인증 사용자 요청 {}", requestURI);
+          //로그인으로 redirect
+          httpResponse.sendRedirect(("/login?redirectURL=" + requestURI));
+          return;
+        }
+      }
+    } catch (Exception e) {
+      throw e;
+    } finally {
+      log.info("인증 체크 필터 종료 {}", requestURI);
+    }
+  }
+
+  private boolean isLoginCheckPath(String requestURI) {
+    return !PatternMatchUtils.simpleMatch(whiteList, requestURI);
+  }
+}
+
+```
+- ```whitelist = {"/", "/members/add", "/login", "/logout","/css/*"};```
+  - 인증 필터를 적용해도 홈, 회원가입, 로그인 화면, css 같은 리소스에는 접근할 수 있어야 한다.
+  - 이렇게 화이트 리스트 경로는 인증과 무관하게 항상 허용한다.
+  - 화이트 리스트를 제외한 나머지 모든 경로에는 인증 체크 로직을 적용한다.
+- ```isLoginCheckPath(requestURI)```
+  - 화이트 리스트를 제외한 모든 경우에 인증 체크 로직을 적용한다.
+- ```httpResponse.sendRedirect("/login?redirectURL=" + requestURI);```
+  - 미인증 사용자는 로그인 화면으로 리다이렉트 한다. 
+  - 로그인 이후에 홈이 아닌 원래 요청했던 URI로 이동하는 편의성을 제공하기 위하여 requestURI를 param으로 추가한다.
+- ```return```
+  - 필터를 더는 진행하지 않고 종료한다.
+  - 서블릿, 컨트롤러가 더는 호출되지 않고 종료한다.
+  - 앞서 redirect를 사용했기 때문에 redirect가 응답으로 적용되고 요청이 끝난다.
+
+#### WebConfig - loginCheckFilter() 추가
+```java
+    @Bean
+    public FilterRegistrationBean loginCheckFilter() {
+        FilterRegistrationBean<Filter> filterRegistrationBean = new FilterRegistrationBean<>();
+        filterRegistrationBean.setFilter(new LoginCheckFilter());
+        filterRegistrationBean.setOrder(2);
+        filterRegistrationBean.addUrlPatterns("/*");
+        return filterRegistrationBean;
+    }
+```
+
+## 정리
+- 서블릿 필터를 잘 사용한 덕분에 로그인 하지 않은 사용자는 나머지 경로에 들어갈 수 없게 되었다.
+- 공통 관심사를 서블릿 필터를 사용해서 해결한 덕분에 향후 로그인 관련 정책이 변경되어도 이 부분만 변경하면 된다.
+
+
+
 </div>
 </details>
