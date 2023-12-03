@@ -939,3 +939,135 @@ public class SessionInfoController {
 
 </div>
 </details>
+
+
+
+<details>
+<summary>Section 07 login - filter, interceptor</summary>
+<div markdown="1">
+
+## 공통 관심 사항
+- 요구사항을 보면 로그인 한 사용자만 상품 관리 페이지에 들어갈 수 있어야 한다.
+- 로그인을 하지 않은 사용자에게는 상품 관리 버튼이 보이지 않지만 URL을 직접 호출함으로써 접근할 수 있기에 인가 로직이 필요하다
+- 컨트롤러 api 마다 로그인 여부를 체크하는 로직을 하나하나 작성함으로써 해결가능하겠지만 모든 컨트롤러 로직에 공통으로 로그인 여부를 확인해야 한다.
+- 추후 로그인 관련 로직 변경 시 작성한 모든 로직을 수정하려면 유지보수가 힘듦으로 공통 관심사항 (로그인)을 분리하는 것이 올바른 접근이다.
+- 공통 관심사는 스프링의 AOP로도 해결할 수 있지만, 웹과 관련된 공통 관심사는 서블릿 필터 또는 스프링 인터셉터를 사용하는 것이 좋다.
+
+## 서블릿 필터
+- 필터는 서블릿이 지원하는 수문장이다.
+- 필터 흐름은 다음과 같다.
+  - ```HTTP 요청 -> WAS -> 필터 -> 서블릿 -> 컨트롤러 ```
+  - 필터를 적용하면 필터가 호출 된 다음에 서블릿이 호출된다.
+  - 그래서 모든 고객의 요청 로그를 남기는 요구사항이 있다면 필터를 사용하여 구현할 수 있다.
+  - 참고로 필터는 특정 URL 패턴에 적용 가능하다.
+  - 필터에서 적절하지 않은 요청이라고 판단하여 거기에서 끝을 낼 수도 있다.
+  - 그래서 로그인 여부를 체크하기에 딱 좋다.
+  - 필터는 체인으로 구성되기에 중간에 필터를 자유롭게 추가할 수 있다.
+
+### 필터 인터페이스
+
+```java
+public interface Filter {
+ public default void init(FilterConfig filterConfig) throws ServletException {
+     
+ }
+ public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException;
+ public default void destroy() {
+     
+ }
+}
+```
+- 필터 인터페이스를 구현하고 등록하면 서블릿 컨테이너가 필터를 싱글톤 객체로 생성하고, 관리한다.
+  - init(): 필터 초기화 메서드, 서블릿 컨테이너가 생성될 때 호출된다.
+  - doFilter(): 고객의 요청이 올 때마다 해당 메서드가 호출된다. 필터의 로직을 구현하면 된다. 
+  - destroy(): 필터 종료 메서드, 서블릿 컨테이너가 종료될 때 호출된다. 
+
+### 서블릿 필터 - 요청 로그
+- 필터가 정말 수문장 역할을 잘 하는지 확인하기 위해 가장 단순한 필터인 모든 요청을 로그로 남기는 필터를 개발하고 적용해보자
+
+#### LogFilter - 로그 필터
+```java
+package hello.login.web.filter;
+import lombok.extern.slf4j.Slf4j;
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.util.UUID;
+@Slf4j
+public class LogFilter implements Filter {
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        log.info("log filter init");
+    }
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response,
+                         FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        String requestURI = httpRequest.getRequestURI();
+        String uuid = UUID.randomUUID().toString();
+        try {
+            log.info("REQUEST [{}][{}]", uuid, requestURI);
+            chain.doFilter(request, response);
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            log.info("RESPONSE [{}][{}]", uuid, requestURI);
+        }
+        
+    }
+    @Override
+    public void destroy() {
+      log.info("log filter destroy");
+    }
+    
+}
+```
+
+- ```public class LogFilter implemnets Filter {}```
+  - 필터를 사용하려면 필터 인터페이스를 구현해야 한다.
+- ```doFilter(ServletRequest request, ServletResponse response, FilterChain chain)```
+  - HTTP 요청이 오면 doFilter가 호출된다.
+  - ServletRequest request는 HTTP 요청이 아닌 경우까지 고려해서 정의된 스펙이다.
+  - HTTP를 사용하면 HttpServletRequest로 다운 캐스팅 하면 된다.
+- ```String uuid = UUID.randomUUID().toString();```
+  - HTTP 요청을 구분하기 위해 요청당 임의의 uuid를 생성해둔다.
+- ```log.info("REQUEST [{}][{}]", uuid, requestURI);```
+  - uuid와 requestURI를 출력한다.
+- ```chain.doFilter(request, response);```
+  - 다음 필터가 있으면 필터를 호출하고 필터가 없으면 서블릿을 호출한다.
+  - 이 로직을 호출하지 않으면 다음 단계로 진행되지 않는다.
+
+#### WebConfig - 필터 설정
+```java
+package hello.login;
+
+import hello.login.web.filter.LogFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.servlet.Filter;
+
+@Configuration
+public class WebConfig {
+
+    @Bean
+    public FilterRegistrationBean logFilter() {
+        FilterRegistrationBean<Filter> filterRegistrationBean = new FilterRegistrationBean<Filter>();
+        filterRegistrationBean.setFilter(new LogFilter());
+        filterRegistrationBean.setOrder(1);
+        filterRegistrationBean.addUrlPatterns("/*");
+
+        return filterRegistrationBean;
+    }
+}
+
+```
+- 필터를 등록하는 방법은 여러가지가 있지만, 스프링 부트를 사용한다면 FilterRegistrationBean을 사용해서 등록하면 된다.
+- ```setFilter(new LogFilter)```: 등록할 필터를 지정한다.
+- ```setOrder(1)```: 체인으로 동작하는 필터의 순서를 지정한다. (낮을 수록 먼저 동작)
+- ```addUrlPatterns("/*")```: 필터를 적용할 URL 패턴을 지정한다. 한번에 여러 패턴을 지정할 수 있다.
+
+</div>
+</details>
