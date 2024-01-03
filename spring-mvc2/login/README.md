@@ -1156,6 +1156,39 @@ public class LoginCheckFilter implements Filter {
 - 공통 관심사를 서블릿 필터를 사용해서 해결한 덕분에 향후 로그인 관련 정책이 변경되어도 이 부분만 변경하면 된다.
 
 
+## 스프링 인터셉터 - 소개
+스프링 인터셉터도 서블릿 필터와 같이 웹과 관련된 공통 관심 사항을 효과적으로 해결할 수 있는 기술이다.
+서블릿 필터가 서블릿이 제공하는 기술이라면, 스프링 인터셉터는 스프링 MVC가 제공하는 기술이다.
+둘다 웹과 관련된 공통 관심 사항을 처리하지만, 적용되는 순서와 범위 그리고 사용방법이 다르다.
+
+#### 스프링 인터셉터 흐름
+> HTTP요청 -> WAS -> 필터 -> 서블릿 -> 스프링 인터셉터 -> 컨트롤러
+
+- 스프링 인터셉터는 디스패처 서블릿과 컨트롤러 사이에서 컨트롤러 호출 직전에 호출된다.
+- 스프링 인터셉터는 스프링 MVC가 제공하는 기능이기 때문에 결국 디스패쳐 서블릿 이후에 등장하게 된다. 스프링 MVC의 시작점이 디스패처 서블릿이라고 생각해보면 이해가 됨
+- 스프링 인터셉터에도 URL 패턴을 적용할 수 있는데, 서블릿 URL 패턴과는 다르고 매우 정밀하게 설정할 수 있다.
+- 스프링 인터셉터 역시 체인으로 구성되는데, 중간에 인터셉터를 자유롭게 추가할 수 있다. 예를 들어서 로그를 남기는 인터셉터를 먼저 적용하고, 그 다음에 로그인 여부를 체크하는 인터셉터를 만들 수 있다.
+
+## 스프링 인터셉터 인터페이스
+
+- 스프링의 인터셉터를 사용하면 서블릿 필터보다 편리하게 더 정교하고 다양한 기능을 이용할 수 있다.
+
+```java
+ public interface HandlerInterceptor {
+  default boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {}
+  default void postHandle(HttpServletRequest request, HttpServletResponse response,
+                          Object handler, @Nullable ModelAndView modelAndView)
+          throws Exception {}
+  default void afterCompletion(HttpServletRequest request, HttpServletResponse
+          response,
+                               Object handler, @Nullable Exception ex) throws
+          Exception {}
+}
+```
+- 서블릿 필터의 경우 단순하게 doFilter()하나가 제공되는 반면 인터셉터는 컨트롤러 호출 전, 호출 후, 요청 완료 이후와 같이 단계적으로 잘 세분화되어있다.
+- 서블릿 필터의 경우 단순히 request, response만 제공했지만, 인터셉터는 어떤 컨트롤러가 호출되는지 호출 정보도 받을 수 있다.
+- 그리고 어떤 modelAndView가 반환되는지 응답 정보도 받을 수 있다.
+- afterCompletion은 예외와 무관하게 호출된다.
 
 </div>
 </details>
