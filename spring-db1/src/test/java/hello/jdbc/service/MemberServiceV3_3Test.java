@@ -6,35 +6,58 @@ import static hello.jdbc.connection.ConnectionConst.USERNAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.zaxxer.hikari.HikariDataSource;
 import hello.jdbc.domain.Member;
 import hello.jdbc.repository.MemberRepositoryV3;
 import java.sql.SQLException;
+import javax.sql.DataSource;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * 트랜잭션 파라미터 커넥션 전달 형식 동기화
  */
-class MemberServiceV3_2Test {
+@Slf4j
+@SpringBootTest
+class MemberServiceV3_3Test {
     private static final String MEMBER_A = "memberA";
     private static final String MEMBER_B = "memberB";
     private static final String MEMBER_EX = "ex";
 
+    @Autowired
     private MemberRepositoryV3 memberRepository;
-    private MemberServiceV3_2 memberService;
+    @Autowired
+    private MemberServiceV3_3 memberService;
 
-    @BeforeEach
-    void setUp() {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(URL);
-        dataSource.setUsername(USERNAME);
-        dataSource.setPassword(PASSWORD);
-        memberRepository = new MemberRepositoryV3(dataSource);
-        memberService = new MemberServiceV3_2(new DataSourceTransactionManager(dataSource), memberRepository);
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        DataSource dataSource() {
+            return new DriverManagerDataSource(URL, USERNAME, PASSWORD);
+        }
+
+        @Bean
+        PlatformTransactionManager transactionManager() {
+            return new DataSourceTransactionManager(dataSource());
+        }
+
+        @Bean
+        MemberRepositoryV3 memberRepositoryV3() {
+            return new MemberRepositoryV3(dataSource());
+        }
+
+        @Bean
+        MemberServiceV3_3 memberServiceV3_3() {
+            return new MemberServiceV3_3(memberRepositoryV3());
+        }
     }
 
     @AfterEach
